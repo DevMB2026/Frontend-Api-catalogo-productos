@@ -1,0 +1,17 @@
+# Blueprint de Render para desplegar el frontend como Static Site.
+# Puedes usar este archivo con "New → Blueprint" en Render, o configurar
+# el Static Site manualmente con estos mismos valores.
+services:
+  - type: web
+    name: catalogo-frontend
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://api-catalogo-productos.onrender.com/api/v1
+    # Reescritura para que las rutas del SPA (React Router) funcionen al recargar.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
