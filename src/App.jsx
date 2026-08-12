@@ -4,10 +4,17 @@ import Layout from './components/Layout';
 import PublicLayout from './components/PublicLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProductsList from './pages/ProductsList';
-import ProductForm from './pages/ProductForm';
-import ProductEdit from './pages/ProductEdit';
+import ProductBuilder from './pages/ProductBuilder';
 import Catalogo from './pages/Catalogo';
 import ProductoDetalle from './pages/ProductoDetalle';
+import AttributesAdmin from './pages/admin/AttributesAdmin';
+import FeaturesAdmin from './pages/admin/FeaturesAdmin';
+import ApplicationsAdmin from './pages/admin/ApplicationsAdmin';
+import OptionsAdmin from './pages/admin/OptionsAdmin';
+import OptionValuesAdmin from './pages/admin/OptionValuesAdmin';
+import SizeChartsAdmin from './pages/admin/SizeChartsAdmin';
+import CategoriesAdmin from './pages/admin/CategoriesAdmin';
+import CategoryAttributesAdmin from './pages/admin/CategoryAttributesAdmin';
 
 export default function App() {
   return (
@@ -31,8 +38,17 @@ export default function App() {
         }
       >
         <Route index element={<ProductsList />} />
-        <Route path="productos/nuevo" element={<ProductForm />} />
-        <Route path="productos/:id/editar" element={<ProductEdit />} />
+        <Route path="productos/nuevo" element={<ProductBuilder />} />
+        <Route path="productos/:id/editar" element={<ProductBuilder />} />
+        {/* Configuración del motor (PIM) */}
+        <Route path="atributos" element={<AttributesAdmin />} />
+        <Route path="caracteristicas" element={<FeaturesAdmin />} />
+        <Route path="aplicaciones" element={<ApplicationsAdmin />} />
+        <Route path="opciones" element={<OptionsAdmin />} />
+        <Route path="opciones/:optionId/valores" element={<OptionValuesAdmin />} />
+        <Route path="tablas-medidas" element={<SizeChartsAdmin />} />
+        <Route path="categorias" element={<CategoriesAdmin />} />
+        <Route path="categorias/:id/atributos" element={<CategoryAttributesAdmin />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

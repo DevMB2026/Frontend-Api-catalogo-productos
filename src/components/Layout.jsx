@@ -13,11 +13,17 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-gray-900 text-white">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 min-h-16 py-2 flex items-center justify-between gap-4 flex-wrap">
           <Link to="/admin" className="font-bold text-lg">Catálogo · Admin</Link>
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-1 flex-wrap">
             <NavLink to="/admin" end className={navClass}>Productos</NavLink>
-            <NavLink to="/admin/productos/nuevo" className={navClass}>+ Nuevo</NavLink>
+            <span className="w-px h-5 bg-gray-700 mx-1" aria-hidden="true" />
+            <NavLink to="/admin/atributos" className={navClass}>Atributos</NavLink>
+            <NavLink to="/admin/caracteristicas" className={navClass}>Características</NavLink>
+            <NavLink to="/admin/aplicaciones" className={navClass}>Aplicaciones</NavLink>
+            <NavLink to="/admin/opciones" className={navClass}>Opciones</NavLink>
+            <NavLink to="/admin/tablas-medidas" className={navClass}>Tablas</NavLink>
+            <NavLink to="/admin/categorias" className={navClass}>Categorías</NavLink>
           </nav>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400 hidden sm:inline">{user?.email}</span>

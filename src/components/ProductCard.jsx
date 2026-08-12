@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 
-// Devuelve la URL de la imagen principal del producto (imagen principal de la
-// primera variante que tenga imágenes).
+// Imagen principal: primero la galería del producto, luego la de alguna variante.
 export function mainImage(product) {
+  const pm = (product.media || []).find((i) => i.principal) || (product.media || [])[0];
+  if (pm) return pm.url;
   for (const v of product.variants || []) {
-    const img = v.imagenes?.find((i) => i.principal) || v.imagenes?.[0];
+    const img = (v.media || []).find((i) => i.principal) || (v.media || [])[0];
     if (img) return img.url;
   }
   return null;
@@ -12,7 +13,7 @@ export function mainImage(product) {
 
 export default function ProductCard({ product }) {
   const img = mainImage(product);
-  const colores = (product.variants || []).length;
+  const nVariants = (product.variants || []).length;
 
   return (
     <Link
@@ -29,7 +30,7 @@ export default function ProductCard({ product }) {
       <div className="p-3 flex-1 flex flex-col">
         <p className="text-xs uppercase tracking-wide text-gray-400">{product.brand?.nombre}</p>
         <h3 className="font-medium text-gray-900 text-sm line-clamp-2 mt-0.5">{product.nombre}</h3>
-        <p className="text-xs text-gray-400 mt-auto pt-2">{colores} {colores === 1 ? 'color' : 'colores'}</p>
+        {nVariants > 0 && <p className="text-xs text-gray-400 mt-auto pt-2">{nVariants} {nVariants === 1 ? 'variante' : 'variantes'}</p>}
       </div>
     </Link>
   );
