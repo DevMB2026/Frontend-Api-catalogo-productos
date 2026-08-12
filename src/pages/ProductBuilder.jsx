@@ -1,18 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listBrands, listCategories, createProduct, updateProduct, getProduct } from '../api/catalog';
 import { optionsApi, optionValuesApi, featuresApi, applicationsApi, sizeChartsApi, getAttributeSchema } from '../api/pim';
+import { scFromProduct, scToPayload } from '../lib/variantModel';
 import DynamicAttributeForm from '../components/builder/DynamicAttributeForm';
 import MultiSelectPicker from '../components/builder/MultiSelectPicker';
-import OptionsSelector from '../components/builder/OptionsSelector';
-import VariantGenerator from '../components/builder/VariantGenerator';
+import SizesAndColors from '../components/builder/SizesAndColors';
 import MediaManager from '../components/builder/MediaManager';
 
 const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
-const SEXOS = ['unisex', 'hombre', 'mujer'];
+const SEXO_OPTS = [{ value: 'hombre', label: 'Hombre' }, { value: 'mujer', label: 'Mujer' }, { value: 'unisex', label: 'Unisex / niños' }];
 const idOf = (x) => (x && x._id) ? x._id : x;
-const comboKey = (ids) => ids.slice().sort().join('|');
 
 function Section({ title, desc, children }) {
   return (
@@ -34,10 +33,10 @@ function serializeAttributes(schema, values) {
 
 export default function ProductBuilder() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { id } = useParams();
   const isEdit = !!id;
 
-  // Catálogos base
   const { data: brandsData } = useQuery({ queryKey: ['brands'], queryFn: listBrands });
   const { data: catsData } = useQuery({ queryKey: ['categories', {}], queryFn: () => listCategories() });
   const { data: optionsData } = useQuery({ queryKey: ['options'], queryFn: () => optionsApi.list() });
@@ -54,63 +53,66 @@ export default function ProductBuilder() {
   const applications = appsData?.data ?? [];
   const sizeCharts = sizeChartsData?.data ?? [];
 
-  const valueById = Object.fromEntries(values.map((v) => [v._id, v]));
   const valuesByOption = {};
   for (const v of values) { const oid = idOf(v.option); (valuesByOption[oid] = valuesByOption[oid] || []).push(v); }
 
-  // Producto (edición)
+  // Ejes: Color (swatch) y las Opciones de tipo talla (presets, data-driven).
+  const colorOption = options.find((o) => o.slug === 'color') || options.find((o) => o.tipo === 'swatch');
+  const colorOptionId = colorOption?._id;
+  const sizeOptions = options.filter((o) => o.tipo === 'size');
+
   const { data: productData, refetch: refetchProduct } = useQuery({ queryKey: ['product', id], queryFn: () => getProduct(id), enabled: isEdit });
   const product = productData?.data;
 
-  // Estado del builder
-  const [form, setForm] = useState({ nombre: '', sku: '', descripcion: '', sexo: 'unisex', brand: '', category: '', destacado: false });
+  const [form, setForm] = useState({ nombre: '', sku: '', descripcion: '', sexo: ['unisex'], brand: '', category: '', destacado: false });
   const [attributes, setAttributes] = useState({});
   const [selFeatures, setSelFeatures] = useState([]);
   const [selApplications, setSelApplications] = useState([]);
   const [sizeChart, setSizeChart] = useState('');
-  const [selectedOptions, setSelectedOptions] = useState([]);
-  const [variants, setVariants] = useState([]);
+  const [sc, setSc] = useState({ sizeOptionId: '', baseSizes: [], colors: [] });
   const [productMedia, setProductMedia] = useState([]);
   const [faq, setFaq] = useState([]);
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [prefilled, setPrefilled] = useState(!isEdit);
+  const [scPrefilled, setScPrefilled] = useState(!isEdit);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setAttr = (aid, v) => setAttributes((a) => ({ ...a, [aid]: v }));
 
+  // Crea un OptionValue nuevo al vuelo (talla/color tecleado) y devuelve su id.
+  const createValue = async (optionId, label, meta) => {
+    const r = await optionValuesApi.create({ option: optionId, valor: label, ...(meta ? { meta } : {}) });
+    await qc.invalidateQueries({ queryKey: ['option-values-all'] });
+    return r.data.data._id;
+  };
+
   const { data: schemaData } = useQuery({ queryKey: ['attr-schema', form.category], queryFn: () => getAttributeSchema(form.category), enabled: !!form.category });
   const schema = form.category ? schemaData?.data : null;
 
-  // Prefill (una vez) al cargar el producto en edición.
+  // Prefill de datos (una vez) al cargar el producto en edición.
   useEffect(() => {
     if (!isEdit || !product || prefilled) return;
-    setForm({ nombre: product.nombre, sku: product.sku, descripcion: product.descripcion || '', sexo: product.sexo || 'unisex', brand: idOf(product.brand) || '', category: idOf(product.category) || '', destacado: !!product.destacado });
+    setForm({ nombre: product.nombre, sku: product.sku, descripcion: product.descripcion || '', sexo: Array.isArray(product.sexo) ? product.sexo : (product.sexo ? [product.sexo] : ['unisex']), brand: idOf(product.brand) || '', category: idOf(product.category) || '', destacado: !!product.destacado });
     setAttributes(Object.fromEntries((product.attributes || []).map((a) => [idOf(a.attribute), a.value])));
     setSelFeatures((product.features || []).map(idOf));
     setSelApplications((product.applications || []).map(idOf));
     setSizeChart(idOf(product.sizeChart) || '');
-    setSelectedOptions((product.options || []).map((o) => ({ option: idOf(o.option), values: (o.values || []).map(idOf) })));
-    setVariants((product.variants || []).map((v) => {
-      const ovs = (v.optionValues || []).map(idOf);
-      return { key: comboKey(ovs), _id: v._id, optionValues: ovs, sku: v.sku || '', price: v.price || 0, stock: v.stock || 0, composicion: v.composicion || '', activo: v.activo !== false, media: v.media || [] };
-    }));
     setProductMedia(product.media || []);
     setFaq(product.faq || []);
     setPrefilled(true);
   }, [product, isEdit, prefilled]);
 
-  // Tras subir/borrar imágenes (refetch), re-sincroniza SOLO las imágenes.
+  // Prefill de tallas/colores (necesita el id de la Opción Color).
   useEffect(() => {
-    if (!isEdit || !product || !prefilled) return;
-    setProductMedia(product.media || []);
-    setVariants((prev) => prev.map((v) => {
-      if (!v._id) return v;
-      const sv = (product.variants || []).find((x) => String(x._id) === String(v._id));
-      return sv ? { ...v, media: sv.media || [] } : v;
-    }));
-  }, [product]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!isEdit || scPrefilled || !product || !colorOptionId) return;
+    setSc(scFromProduct(product, colorOptionId));
+    setScPrefilled(true);
+  }, [isEdit, scPrefilled, product, colorOptionId]);
+
+  // Sincroniza la galería del producto tras subir/borrar imágenes (refetch).
+  useEffect(() => { if (isEdit && product) setProductMedia(product.media || []); }, [product, isEdit]);
 
   // Inicializa atributos a defaults SOLO cuando el usuario cambia de categoría.
   const prevCategory = useRef(null);
@@ -136,18 +138,15 @@ export default function ProductBuilder() {
     e.preventDefault();
     setSaving(true); setError(null); setFieldErrors({});
     try {
+      const { options: prodOptions, variants } = await scToPayload(sc, form.sku, colorOptionId, createValue, product?.variants || []);
       const payload = {
         nombre: form.nombre, sku: form.sku, descripcion: form.descripcion || undefined,
         sexo: form.sexo, brand: form.brand, category: form.category, destacado: form.destacado,
         attributes: serializeAttributes(schema, attributes),
         features: selFeatures, applications: selApplications,
         sizeChart: sizeChart || undefined,
-        options: selectedOptions.filter((o) => o.values.length),
-        variants: variants.filter((v) => v.activo !== false).map((v) => ({
-          sku: v.sku, optionValues: v.optionValues, price: Number(v.price) || 0, stock: Number(v.stock) || 0,
-          composicion: v.composicion || undefined,
-          media: (v.media || []).map((m) => ({ url: m.url, public_id: m.public_id, alt: m.alt, orden: m.orden, principal: m.principal }))
-        })),
+        options: prodOptions,
+        variants,
         media: productMedia.map((m) => ({ url: m.url, public_id: m.public_id, alt: m.alt, orden: m.orden, principal: m.principal })),
         faq: faq.filter((f) => f.pregunta && f.respuesta)
       };
@@ -190,10 +189,16 @@ export default function ProductBuilder() {
             <input className={inputCls} value={form.sku} onChange={(e) => set('sku', e.target.value)} required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sexo *</label>
-            <select className={inputCls} value={form.sexo} onChange={(e) => set('sexo', e.target.value)}>
-              {SEXOS.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-1">¿Para quién? *</label>
+            <div className="flex gap-4 pt-2">
+              {SEXO_OPTS.map(({ value, label }) => (
+                <label key={value} className="flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" checked={form.sexo.includes(value)}
+                    onChange={(e) => set('sexo', e.target.checked ? [...form.sexo, value] : form.sexo.filter((x) => x !== value))} />
+                  {label}
+                </label>
+              ))}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Marca *</label>
@@ -230,11 +235,8 @@ export default function ProductBuilder() {
         <MultiSelectPicker items={applications} selected={selApplications} onChange={setSelApplications} empty="Sin aplicaciones." />
       </Section>
 
-      <Section title="Opciones de variación" desc="Elige los ejes (Color, Talla…) y qué valores usa este producto.">
-        <OptionsSelector options={options} valuesByOption={valuesByOption} selected={selectedOptions} onChange={setSelectedOptions} />
-      </Section>
-      <Section title="Variantes" desc="Genera las combinaciones y ajusta SKU, precio, stock y composición.">
-        <VariantGenerator selectedOptions={selectedOptions} valueById={valueById} baseSku={form.sku} variants={variants} onChange={setVariants} />
+      <Section title="Tallas y colores" desc="Define las tallas base (aplican a todos los colores) y los colores. Las variantes se generan solas.">
+        <SizesAndColors sc={sc} onChange={setSc} sizeOptions={sizeOptions} colorOption={colorOption} valuesByOption={valuesByOption} />
       </Section>
 
       {isEdit && product && (
