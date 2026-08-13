@@ -1,0 +1,3 @@
+# SPA fallback: cualquier ruta se sirve con index.html (rewrite 200, no redirect),
+# para que React Router maneje /producto/:slug, /admin, etc. en enlaces directos y refresh.
+/*    /index.html   200

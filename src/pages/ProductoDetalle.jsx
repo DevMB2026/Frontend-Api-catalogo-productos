@@ -50,7 +50,13 @@ export default function ProductoDetalle() {
     return ids.length === selectedIds.length && selectedIds.every((id) => ids.includes(id));
   });
 
-  const images = [...(p.media || []), ...((variant && variant.media) || [])];
+  // Prioriza las imágenes de la variante (color) seleccionada como principal;
+  // si no tiene, cae a la galería del producto. Así, al cambiar de color, el
+  // hero cambia (chooseValue reinicia imgIdx a 0).
+  const variantMedia = (variant && variant.media) || [];
+  const images = variantMedia.length
+    ? [...variantMedia, ...(p.media || [])]
+    : [...(p.media || [])];
   const mainImg = images[imgIdx] || images[0];
 
   const chooseValue = (optId, valId) => { setSelected((s) => ({ ...s, [optId]: valId })); setImgIdx(0); };
