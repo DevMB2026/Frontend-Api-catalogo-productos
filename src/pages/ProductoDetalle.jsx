@@ -5,6 +5,10 @@ import { getProductBySlug } from '../api/catalog';
 
 const idOf = (x) => (x && x._id) ? x._id : x;
 
+// Público objetivo: la DB usa hombre/mujer/unisex; se muestra en términos de tienda.
+const SEXO_LABEL = { hombre: 'Caballero', mujer: 'Dama', unisex: 'Unisex' };
+const sexoTexto = (sexo) => (sexo || []).map((s) => SEXO_LABEL[s] || s).join(' · ');
+
 // Muestra el valor de un atributo según su tipo.
 function attrDisplay(a) {
   const def = a.attribute || {};
@@ -58,6 +62,7 @@ export default function ProductoDetalle() {
 
   const chooseValue = (optId, valId) => { setSelected((s) => ({ ...s, [optId]: valId })); setImgIdx(0); };
   const disponible = p.activo && (!variant || variant.activo !== false);
+  const sexoLabel = sexoTexto(p.sexo);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -93,6 +98,12 @@ export default function ProductoDetalle() {
         <div>
           <div className="flex items-center gap-3 flex-wrap">
             {p.brand?.nombre && <span className="text-xs font-semibold uppercase tracking-widest text-indigo-600">{p.brand.nombre}</span>}
+            {sexoLabel && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-violet-700 bg-violet-50 ring-1 ring-violet-200 rounded-full px-2.5 py-0.5">
+                <svg viewBox="0 0 16 16" className="w-3 h-3 fill-current" aria-hidden="true"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm0 1c-2.5 0-6 1.25-6 3.5V14h12v-1.5C14 10.25 10.5 9 8 9z"/></svg>
+                {sexoLabel}
+              </span>
+            )}
             {disponible && (
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 rounded-full px-2.5 py-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Disponible
