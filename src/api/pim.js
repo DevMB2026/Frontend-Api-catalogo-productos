@@ -25,6 +25,7 @@ export const optionsApi = crud('/options');
 export const optionValuesApi = crud('/option-values');
 export const sizeChartsApi = crud('/size-charts');
 export const categoriesApi = crud('/categories'); // list/create/update/remove (get(id) no aplica: usar list)
+export const brandsApi = crud('/brands'); // CRUD dinámico de marcas
 
 // Esquema del formulario dinámico (atributos de la categoría, con herencia).
 export const getAttributeSchema = (categoryId) => apiFetch(`/categories/${categoryId}/attribute-schema`);

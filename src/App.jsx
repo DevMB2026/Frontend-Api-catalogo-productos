@@ -15,6 +15,7 @@ import OptionValuesAdmin from './pages/admin/OptionValuesAdmin';
 import SizeChartsAdmin from './pages/admin/SizeChartsAdmin';
 import CategoriesAdmin from './pages/admin/CategoriesAdmin';
 import CategoryAttributesAdmin from './pages/admin/CategoryAttributesAdmin';
+import BrandsAdmin from './pages/admin/BrandsAdmin';
 
 export default function App() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="tablas-medidas" element={<SizeChartsAdmin />} />
         <Route path="categorias" element={<CategoriesAdmin />} />
         <Route path="categorias/:id/atributos" element={<CategoryAttributesAdmin />} />
+        <Route path="marcas" element={<BrandsAdmin />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

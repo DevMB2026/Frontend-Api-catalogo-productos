@@ -17,6 +17,7 @@ export default function Layout() {
           <Link to="/admin" className="font-bold text-lg">Catálogo · Admin</Link>
           <nav className="flex items-center gap-1 flex-wrap">
             <NavLink to="/admin" end className={navClass}>Productos</NavLink>
+            <NavLink to="/admin/marcas" className={navClass}>Marcas</NavLink>
             <span className="w-px h-5 bg-gray-700 mx-1" aria-hidden="true" />
             <NavLink to="/admin/atributos" className={navClass}>Atributos</NavLink>
             <NavLink to="/admin/caracteristicas" className={navClass}>Características</NavLink>
