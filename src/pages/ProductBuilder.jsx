@@ -64,7 +64,7 @@ export default function ProductBuilder() {
   const { data: productData, refetch: refetchProduct } = useQuery({ queryKey: ['product', id], queryFn: () => getProduct(id), enabled: isEdit });
   const product = productData?.data;
 
-  const [form, setForm] = useState({ nombre: '', sku: '', descripcion: '', sexo: ['unisex'], brand: '', category: '', destacado: false });
+  const [form, setForm] = useState({ nombre: '', sku: '', descripcion: '', sexo: ['unisex'], brand: '', category: '', destacado: false, precioPublico: '', precioDistribuidor: '' });
   const [attributes, setAttributes] = useState({});
   const [selFeatures, setSelFeatures] = useState([]);
   const [selApplications, setSelApplications] = useState([]);
@@ -94,7 +94,12 @@ export default function ProductBuilder() {
   // Prefill de datos (una vez) al cargar el producto en edición.
   useEffect(() => {
     if (!isEdit || !product || prefilled) return;
-    setForm({ nombre: product.nombre, sku: product.sku, descripcion: product.descripcion || '', sexo: Array.isArray(product.sexo) ? product.sexo : (product.sexo ? [product.sexo] : ['unisex']), brand: idOf(product.brand) || '', category: idOf(product.category) || '', destacado: !!product.destacado });
+    setForm({
+      nombre: product.nombre, sku: product.sku, descripcion: product.descripcion || '',
+      sexo: Array.isArray(product.sexo) ? product.sexo : (product.sexo ? [product.sexo] : ['unisex']),
+      brand: idOf(product.brand) || '', category: idOf(product.category) || '', destacado: !!product.destacado,
+      precioPublico: product.precioPublico ?? '', precioDistribuidor: product.precioDistribuidor ?? ''
+    });
     setAttributes(Object.fromEntries((product.attributes || []).map((a) => [idOf(a.attribute), a.value])));
     setSelFeatures((product.features || []).map(idOf));
     setSelApplications((product.applications || []).map(idOf));
@@ -142,6 +147,8 @@ export default function ProductBuilder() {
       const payload = {
         nombre: form.nombre, sku: form.sku, descripcion: form.descripcion || undefined,
         sexo: form.sexo, brand: form.brand, category: form.category, destacado: form.destacado,
+        precioPublico: form.precioPublico === '' ? undefined : Number(form.precioPublico),
+        precioDistribuidor: form.precioDistribuidor === '' ? undefined : Number(form.precioDistribuidor),
         attributes: serializeAttributes(schema, attributes),
         features: selFeatures, applications: selApplications,
         sizeChart: sizeChart || undefined,
@@ -187,6 +194,18 @@ export default function ProductBuilder() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">SKU *</label>
             <input className={inputCls} value={form.sku} onChange={(e) => set('sku', e.target.value)} required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Precio público</label>
+            <input type="number" min="0" step="0.01" className={inputCls} placeholder="Ej. 500"
+              value={form.precioPublico} onChange={(e) => set('precioPublico', e.target.value)} />
+            <p className="text-xs text-gray-400 mt-1">Visible para cualquier visitante del catálogo. Sin configurar, muestra "Precio no disponible".</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Precio distribuidor</label>
+            <input type="number" min="0" step="0.01" className={inputCls} placeholder="Ej. 350"
+              value={form.precioDistribuidor} onChange={(e) => set('precioDistribuidor', e.target.value)} />
+            <p className="text-xs text-gray-400 mt-1">Solo lo ve un distribuidor autenticado con su API Key. Mismo precio para todos.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">¿Para quién? *</label>
