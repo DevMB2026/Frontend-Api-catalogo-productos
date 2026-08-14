@@ -6,13 +6,14 @@ export function getToken() {
   return localStorage.getItem('token');
 }
 
-export async function apiFetch(path, { method = 'GET', body, auth = false, isForm = false } = {}) {
+export async function apiFetch(path, { method = 'GET', body, auth = false, isForm = false, apiKey } = {}) {
   const headers = {};
   if (body && !isForm) headers['Content-Type'] = 'application/json';
   if (auth) {
     const token = getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
   }
+  if (apiKey) headers['X-API-Key'] = apiKey;
 
   const res = await fetch(BASE_URL + path, {
     method,

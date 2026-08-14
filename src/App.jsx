@@ -7,6 +7,7 @@ import ProductsList from './pages/ProductsList';
 import ProductBuilder from './pages/ProductBuilder';
 import Catalogo from './pages/Catalogo';
 import ProductoDetalle from './pages/ProductoDetalle';
+import DistributorAccess from './pages/DistributorAccess';
 import AttributesAdmin from './pages/admin/AttributesAdmin';
 import FeaturesAdmin from './pages/admin/FeaturesAdmin';
 import ApplicationsAdmin from './pages/admin/ApplicationsAdmin';
@@ -24,6 +25,7 @@ export default function App() {
       <Route path="/" element={<PublicLayout />}>
         <Route index element={<Catalogo />} />
         <Route path="producto/:slug" element={<ProductoDetalle />} />
+        <Route path="distribuidor" element={<DistributorAccess />} />
       </Route>
 
       {/* Autenticación */}
