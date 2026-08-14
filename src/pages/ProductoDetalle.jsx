@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getProductBySlug } from '../api/catalog';
+import { swatchBg } from '../lib/colors';
 
 const idOf = (x) => (x && x._id) ? x._id : x;
 
@@ -160,20 +161,23 @@ export default function ProductoDetalle() {
           {/* Selectores de opción (Color / Talla) */}
           {options.map((o) => {
             const sel = (o.values || []).find((v) => idOf(v) === selected[idOf(o.option)]);
+            // El eje de color siempre se dibuja como ruedita; el resto (talla) como pill.
+            const isColorAxis = o.option?.tipo === 'swatch' || /color/i.test(o.option?.slug || '') || /color/i.test(o.option?.nombre || '');
             return (
               <div key={idOf(o.option)} className="mt-7">
                 <div className="flex items-baseline gap-2 mb-3">
                   <p className="text-sm font-semibold text-gray-900">{o.option?.nombre}</p>
                   {sel && <span className="text-sm text-gray-500">{sel.valor}</span>}
                 </div>
-                <div className="flex gap-2.5 flex-wrap">
+                <div className="flex gap-2.5 flex-wrap items-center">
                   {(o.values || []).map((val) => {
                     const active = selected[idOf(o.option)] === idOf(val);
-                    if (val.meta?.hex) {
+                    if (isColorAxis) {
+                      // SIEMPRE ruedita (nunca botón de texto), aunque no tenga hex.
                       return (
                         <button key={idOf(val)} onClick={() => chooseValue(idOf(o.option), idOf(val))} title={val.valor}
-                          className={`w-9 h-9 rounded-full transition ${active ? 'ring-2 ring-indigo-600 ring-offset-2' : 'ring-1 ring-gray-300 hover:ring-gray-500'}`}
-                          style={{ background: val.meta.hex }} />
+                          className={`w-9 h-9 rounded-full transition shrink-0 ${active ? 'ring-2 ring-indigo-600 ring-offset-2' : 'ring-1 ring-gray-300 hover:ring-gray-500'}`}
+                          style={{ background: swatchBg(val.valor, val.meta?.hex) }} />
                       );
                     }
                     return (
