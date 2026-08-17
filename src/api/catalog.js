@@ -5,10 +5,7 @@ export const listProducts = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return apiFetch(`/products${qs ? '?' + qs : ''}`);
 };
-// auth:true porque el panel admin usa esto para el prefill de edición y
-// necesita ver precioDistribuidor (el backend solo se lo muestra a un JWT
-// admin válido, además de a distribuidores vía X-API-Key).
-export const getProduct = (id) => apiFetch(`/products/${id}`, { auth: true });
+export const getProduct = (id) => apiFetch(`/products/${id}`);
 export const getProductBySlug = (slug) => apiFetch(`/products/slug/${slug}`);
 export const listBrands = () => apiFetch('/brands');
 export const listCategories = () => apiFetch('/categories');

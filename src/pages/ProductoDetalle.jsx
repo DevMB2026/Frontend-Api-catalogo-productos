@@ -195,7 +195,6 @@ export default function ProductoDetalle() {
           {/* Variante seleccionada */}
           {variant && (
             <div className="mt-7 pt-5 border-t border-gray-100 space-y-1.5">
-              {variant.price > 0 && <p className="text-2xl font-bold text-gray-900">${variant.price}</p>}
               {variant.composicion && <p className="text-sm text-gray-600">Composición: {variant.composicion}</p>}
               <p className="text-xs text-gray-400 font-mono">
                 SKU {variant.sku}{variant.stock > 0 ? ` · ${variant.stock} en stock` : ''}

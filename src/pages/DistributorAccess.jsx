@@ -116,7 +116,7 @@ export default function DistributorAccess() {
           <>
             <p className="text-sm text-green-700 mb-4">API Key válida — {products.length} producto(s) encontrado(s).</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {products.map((p) => <ProductCard key={p._id} product={p} esDistribuidor />)}
+              {products.map((p) => <ProductCard key={p._id} product={p} />)}
             </div>
           </>
         )

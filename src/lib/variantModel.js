@@ -37,7 +37,7 @@ export function scFromProduct(product, colorOptionId) {
 
 // Resuelve sc → { options, variants }. Crea los OptionValues que falten (chips
 // tecleados sin valueId) con createValue(optionId, label, meta?) => id.
-// Preserva price/stock/composicion/media de las variantes que ya existían
+// Preserva stock/composicion/media de las variantes que ya existían
 // (match por combinación), pasadas en `existingVariants`.
 export async function scToPayload(sc, baseSku, colorOptionId, createValue, existingVariants = []) {
   const sizeOptionId = sc.sizeOptionId;
@@ -80,7 +80,6 @@ export async function scToPayload(sc, baseSku, colorOptionId, createValue, exist
       variants.push({
         optionValues: ov,
         sku: prev?.sku || `${baseSku}-${slugify(c.label)}${s ? '-' + slugify(s.label) : ''}`.toUpperCase(),
-        price: prev?.price || 0,
         stock: prev?.stock || 0,
         composicion: prev?.composicion || undefined,
         media: (prev?.media || []).map((m) => ({ url: m.url, public_id: m.public_id, alt: m.alt, orden: m.orden, principal: m.principal }))
