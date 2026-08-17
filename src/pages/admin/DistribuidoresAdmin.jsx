@@ -4,6 +4,7 @@ import {
   listDistributors, createDistributor, updateDistributor,
   regenerateDistributorKey, revokeDistributorKey
 } from '../../api/adminDistributor';
+import { listCatalogs } from '../../api/adminCatalog';
 
 const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
 const btnPrimary = 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-md';
@@ -38,18 +39,19 @@ function RevealKeyModal({ apiKey, onClose }) {
   );
 }
 
-function FormModal({ mode, initial, onClose, onSubmit, saving }) {
+function FormModal({ mode, initial, catalogos, onClose, onSubmit, saving }) {
   const [nombre, setNombre] = useState(initial.nombre || '');
   const [email, setEmail] = useState(initial.email || '');
   const [activo, setActivo] = useState(initial.activo ?? true);
+  const [catalogo, setCatalogo] = useState(initial.catalogo?._id || '');
   const [error, setError] = useState(null);
 
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
     try {
-      if (mode === 'create') await onSubmit({ nombre, email });
-      else await onSubmit({ nombre, activo });
+      if (mode === 'create') await onSubmit({ nombre, email, catalogo: catalogo || null });
+      else await onSubmit({ nombre, activo, catalogo: catalogo || null });
     } catch (err) {
       setError(err.message || 'No se pudo guardar');
     }
@@ -80,6 +82,14 @@ function FormModal({ mode, initial, onClose, onSubmit, saving }) {
             />
             {mode === 'edit' && <p className="text-xs text-gray-400 mt-1">El email no se puede editar.</p>}
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Catálogo asignado</label>
+            <select className={inputCls} value={catalogo} onChange={(e) => setCatalogo(e.target.value)}>
+              <option value="">Sin asignar (acceso al catálogo completo)</option>
+              {catalogos.map((c) => <option key={c._id} value={c._id}>{c.nombre}</option>)}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">Si se asigna, este distribuidor solo verá los productos de ese catálogo, sin poder cambiarlo.</p>
+          </div>
           {mode === 'edit' && (
             <label className="flex items-center gap-2 text-sm text-gray-700">
               <input type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} />
@@ -99,7 +109,9 @@ function FormModal({ mode, initial, onClose, onSubmit, saving }) {
 export default function DistribuidoresAdmin() {
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({ queryKey: ['distribuidores'], queryFn: listDistributors });
+  const { data: catalogosData } = useQuery({ queryKey: ['catalogos'], queryFn: listCatalogs });
   const rows = data?.data ?? [];
+  const catalogos = catalogosData?.data ?? [];
 
   const [modal, setModal] = useState(null); // { mode: 'create' | 'edit', row? }
   const [revealKey, setRevealKey] = useState(null);
@@ -172,6 +184,7 @@ export default function DistribuidoresAdmin() {
                 <th className="px-4 py-3 font-medium">Nombre</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
+                <th className="px-4 py-3 font-medium">Catálogo</th>
                 <th className="px-4 py-3 font-medium">API Key</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -183,6 +196,9 @@ export default function DistribuidoresAdmin() {
                   <td className="px-4 py-3 text-gray-700">{row.email}</td>
                   <td className="px-4 py-3">
                     {row.activo ? <span className="text-emerald-600 text-xs">Activo</span> : <span className="text-red-500 text-xs">Desactivado</span>}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700">
+                    {row.catalogo?.nombre || <span className="text-gray-400">Completo</span>}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
                     {row.apiKey ? (
@@ -209,6 +225,7 @@ export default function DistribuidoresAdmin() {
         <FormModal
           mode={modal.mode}
           initial={modal.mode === 'edit' ? modal.row : {}}
+          catalogos={catalogos}
           onClose={() => setModal(null)}
           onSubmit={handleFormSubmit}
           saving={createMut.isPending || updateMut.isPending}
