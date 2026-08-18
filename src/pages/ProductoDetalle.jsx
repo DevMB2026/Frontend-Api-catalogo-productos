@@ -97,7 +97,7 @@ export default function ProductoDetalle() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         {/* ---------- Galería ---------- */}
         <div className="lg:sticky lg:top-6 self-start">
-          <div className="aspect-square bg-gray-50 rounded-2xl overflow-hidden ring-1 ring-gray-200/70 shadow-sm">
+          <div className="aspect-[2/3] bg-gray-50 rounded-2xl overflow-hidden ring-1 ring-gray-200/70 shadow-sm">
             {mainImg ? (
               <img src={mainImg.url} alt={mainImg.alt || p.nombre} className="w-full h-full object-contain" />
             ) : (
@@ -133,7 +133,7 @@ export default function ProductoDetalle() {
           </p>
 
           {p.descripcion && (
-            <p className="text-gray-600 leading-relaxed mt-5 border-l-2 border-gray-100 pl-4">{p.descripcion}</p>
+            <p className="text-gray-600 leading-relaxed mt-5 border-l-2 border-gray-100 pl-4 text-justify [text-wrap:pretty]">{p.descripcion}</p>
           )}
 
           {/* Género / Público (botones interactivos, filtran la galería) */}
@@ -272,7 +272,7 @@ export default function ProductoDetalle() {
             {p.faq.map((f, i) => (
               <div key={i} className="bg-white rounded-xl ring-1 ring-gray-100 p-4">
                 <p className="font-medium text-gray-900">{f.pregunta}</p>
-                <p className="text-sm text-gray-600 mt-1">{f.respuesta}</p>
+                <p className="text-sm text-gray-600 mt-1 text-justify [text-wrap:pretty]">{f.respuesta}</p>
               </div>
             ))}
           </div>

@@ -20,7 +20,7 @@ export default function ProductCard({ product }) {
       to={`/producto/${product.slug}`}
       className="group bg-white rounded-lg shadow-sm hover:shadow-md transition overflow-hidden flex flex-col"
     >
-      <div className="aspect-square bg-gray-100 overflow-hidden">
+      <div className="aspect-[2/3] bg-gray-100 overflow-hidden">
         {img ? (
           <img src={img} alt={product.nombre} className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
         ) : (
