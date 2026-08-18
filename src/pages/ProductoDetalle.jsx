@@ -192,10 +192,17 @@ export default function ProductoDetalle() {
             );
           })}
 
-          {/* Variante seleccionada */}
+          {/* Composición / tela */}
+          {variant?.composicion && (
+            <div className="mt-7">
+              <p className="text-sm font-semibold text-gray-900 mb-2">Composición</p>
+              <p className="text-sm text-gray-600 leading-relaxed text-justify [text-wrap:pretty]">{variant.composicion}</p>
+            </div>
+          )}
+
+          {/* Variante seleccionada (SKU / stock) */}
           {variant && (
-            <div className="mt-7 pt-5 border-t border-gray-100 space-y-1.5">
-              {variant.composicion && <p className="text-sm text-gray-600">Composición: {variant.composicion}</p>}
+            <div className="mt-7 pt-5 border-t border-gray-100">
               <p className="text-xs text-gray-400 font-mono">
                 SKU {variant.sku}{variant.stock > 0 ? ` · ${variant.stock} en stock` : ''}
               </p>
