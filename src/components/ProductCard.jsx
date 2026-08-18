@@ -22,7 +22,7 @@ export default function ProductCard({ product }) {
     >
       <div className="aspect-square bg-gray-100 overflow-hidden">
         {img ? (
-          <img src={img} alt={product.nombre} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+          <img src={img} alt={product.nombre} className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">Sin imagen</div>
         )}

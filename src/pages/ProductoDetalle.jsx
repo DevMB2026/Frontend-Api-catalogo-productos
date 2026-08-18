@@ -99,7 +99,7 @@ export default function ProductoDetalle() {
         <div className="lg:sticky lg:top-6 self-start">
           <div className="aspect-square bg-gray-50 rounded-2xl overflow-hidden ring-1 ring-gray-200/70 shadow-sm">
             {mainImg ? (
-              <img src={mainImg.url} alt={mainImg.alt || p.nombre} className="w-full h-full object-cover" />
+              <img src={mainImg.url} alt={mainImg.alt || p.nombre} className="w-full h-full object-contain" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">Sin imagen</div>
             )}
@@ -109,7 +109,7 @@ export default function ProductoDetalle() {
               {images.map((im, i) => (
                 <button key={im.public_id || im.url || i} onClick={() => setImgIdx(i)}
                   className={`w-16 h-16 rounded-xl overflow-hidden transition ${i === imgIdx ? 'ring-2 ring-indigo-600 ring-offset-2' : 'ring-1 ring-gray-200 hover:ring-gray-400'}`}>
-                  <img src={im.url} alt="" className="w-full h-full object-cover" />
+                  <img src={im.url} alt="" className="w-full h-full object-contain" />
                 </button>
               ))}
             </div>
