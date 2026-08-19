@@ -20,6 +20,7 @@ export default function Layout() {
             <NavLink to="/admin/marcas" className={navClass}>Marcas</NavLink>
             <NavLink to="/admin/catalogos" className={navClass}>Catálogos</NavLink>
             <NavLink to="/admin/distribuidores" className={navClass}>Distribuidores</NavLink>
+            <NavLink to="/admin/notificaciones" className={navClass}>Notificaciones</NavLink>
             <span className="w-px h-5 bg-gray-700 mx-1" aria-hidden="true" />
             <NavLink to="/admin/atributos" className={navClass}>Atributos</NavLink>
             <NavLink to="/admin/caracteristicas" className={navClass}>Características</NavLink>

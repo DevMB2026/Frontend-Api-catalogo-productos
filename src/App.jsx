@@ -19,6 +19,7 @@ import CategoryAttributesAdmin from './pages/admin/CategoryAttributesAdmin';
 import BrandsAdmin from './pages/admin/BrandsAdmin';
 import DistribuidoresAdmin from './pages/admin/DistribuidoresAdmin';
 import CatalogosAdmin from './pages/admin/CatalogosAdmin';
+import NotificacionesAdmin from './pages/admin/NotificacionesAdmin';
 
 export default function App() {
   return (
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="marcas" element={<BrandsAdmin />} />
         <Route path="catalogos" element={<CatalogosAdmin />} />
         <Route path="distribuidores" element={<DistribuidoresAdmin />} />
+        <Route path="notificaciones" element={<NotificacionesAdmin />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
