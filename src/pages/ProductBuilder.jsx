@@ -6,6 +6,7 @@ import { optionsApi, optionValuesApi, featuresApi, applicationsApi, sizeChartsAp
 import { scFromProduct, scToPayload } from '../lib/variantModel';
 import DynamicAttributeForm from '../components/builder/DynamicAttributeForm';
 import MultiSelectPicker from '../components/builder/MultiSelectPicker';
+import SizeChartPicker from '../components/builder/SizeChartPicker';
 import SizesAndColors from '../components/builder/SizesAndColors';
 import MediaManager from '../components/builder/MediaManager';
 
@@ -148,7 +149,7 @@ export default function ProductBuilder() {
         sexo: form.sexo, brand: form.brand, category: form.category, destacado: form.destacado,
         attributes: serializeAttributes(schema, attributes),
         features: selFeatures, applications: selApplications,
-        sizeChart: sizeChart || undefined,
+        sizeChart: sizeChart || null, // null explícito (no undefined) para que "quitar tabla" sí llegue al backend
         options: prodOptions,
         variants,
         media: productMedia.map((m) => ({ url: m.url, public_id: m.public_id, alt: m.alt, orden: m.orden, principal: m.principal })),
@@ -249,11 +250,8 @@ export default function ProductBuilder() {
         </Section>
       )}
 
-      <Section title="Tabla de medidas">
-        <select className={inputCls} value={sizeChart} onChange={(e) => setSizeChart(e.target.value)}>
-          <option value="">Sin tabla</option>
-          {sizeCharts.map((s) => <option key={s._id} value={s._id}>{s.nombre}</option>)}
-        </select>
+      <Section title="Tabla de medidas" desc="Si no se asigna ninguna, la ficha del producto no muestra la sección de medidas.">
+        <SizeChartPicker items={sizeCharts} value={sizeChart} onChange={setSizeChart} />
       </Section>
 
       <Section title="Preguntas frecuentes">

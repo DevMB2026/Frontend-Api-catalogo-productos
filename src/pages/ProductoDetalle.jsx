@@ -250,21 +250,31 @@ export default function ProductoDetalle() {
       {p.sizeChart?.rows?.length > 0 && (
         <section className="mt-12">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">Tabla de medidas <span className="text-sm text-gray-400 font-normal">({p.sizeChart.unidad})</span></h2>
+          {/* overflow-x-auto: en móvil/muchas tallas la tabla se desborda; la
+              columna de talla queda fija (sticky) para que nunca se pierda de
+              vista qué fila se está leyendo mientras se desliza el resto. */}
           <div className="overflow-x-auto rounded-xl ring-1 ring-gray-200">
-            <table className="min-w-full text-sm bg-white">
-              <thead className="bg-gray-50 text-gray-600 text-left">
+            <table className="min-w-max w-full text-sm bg-white border-separate border-spacing-0">
+              <thead>
                 <tr>
-                  <th className="px-4 py-2.5 font-medium">Talla</th>
-                  {(p.sizeChart.columns || []).map((c) => <th key={c} className="px-4 py-2.5 font-medium">{c}</th>)}
+                  <th className="sticky left-0 z-10 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-900 bg-gray-100 shadow-[1px_0_0_#e5e7eb] whitespace-nowrap">Talla</th>
+                  {(p.sizeChart.columns || []).map((c) => (
+                    <th key={c} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-50 whitespace-nowrap">{c}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {p.sizeChart.rows.map((row) => (
-                  <tr key={row.label}>
-                    <td className="px-4 py-2.5 font-medium text-gray-900">{row.label}</td>
-                    {(p.sizeChart.columns || []).map((c, ci) => <td key={c} className="px-4 py-2.5 text-gray-600">{row.values?.[ci] ?? '—'}</td>)}
-                  </tr>
-                ))}
+              <tbody>
+                {p.sizeChart.rows.map((row, ri) => {
+                  const rowBg = ri % 2 ? 'bg-gray-50/60' : 'bg-white';
+                  return (
+                    <tr key={row.label} className={rowBg}>
+                      <td className={`sticky left-0 z-10 px-4 py-2.5 font-bold text-gray-900 shadow-[1px_0_0_#e5e7eb] whitespace-nowrap ${rowBg}`}>{row.label}</td>
+                      {(p.sizeChart.columns || []).map((c, ci) => (
+                        <td key={c} className="px-4 py-2.5 text-gray-600 tabular-nums border-t border-gray-100 whitespace-nowrap">{row.values?.[ci] ?? '—'}</td>
+                      ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
