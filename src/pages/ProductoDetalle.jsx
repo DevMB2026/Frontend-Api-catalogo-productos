@@ -86,6 +86,14 @@ export default function ProductoDetalle() {
   const chooseSexo = (s) => { setSelSexo(s); setImgIdx(0); };
   const disponible = p.activo && (!variant || variant.activo !== false);
 
+  // Si el producto tiene tabla por género (hombre/mujer con cortes distintos),
+  // se muestra la que corresponde al género seleccionado arriba — mismo
+  // selector que ya cambia color/talla/galería. Si no, se usa la tabla única
+  // de siempre (comportamiento sin cambios para productos que no la necesitan).
+  const sizeChart = (selSexo === 'hombre' && p.sizeChartHombre) ? p.sizeChartHombre
+    : (selSexo === 'mujer' && p.sizeChartMujer) ? p.sizeChartMujer
+    : p.sizeChart;
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* Migas */}
@@ -247,9 +255,9 @@ export default function ProductoDetalle() {
       </div>
 
       {/* Tabla de medidas */}
-      {p.sizeChart?.rows?.length > 0 && (
+      {sizeChart?.rows?.length > 0 && (
         <section className="mt-12">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Tabla de medidas <span className="text-sm text-gray-400 font-normal">({p.sizeChart.unidad})</span></h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Tabla de medidas <span className="text-sm text-gray-400 font-normal">({sizeChart.unidad})</span></h2>
           {/* overflow-x-auto: en móvil/muchas tallas la tabla se desborda; la
               columna de talla queda fija (sticky) para que nunca se pierda de
               vista qué fila se está leyendo mientras se desliza el resto. */}
@@ -258,18 +266,18 @@ export default function ProductoDetalle() {
               <thead>
                 <tr>
                   <th className="sticky left-0 z-10 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-900 bg-gray-100 shadow-[1px_0_0_#e5e7eb] whitespace-nowrap">Talla</th>
-                  {(p.sizeChart.columns || []).map((c) => (
+                  {(sizeChart.columns || []).map((c) => (
                     <th key={c} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-50 whitespace-nowrap">{c}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {p.sizeChart.rows.map((row, ri) => {
+                {sizeChart.rows.map((row, ri) => {
                   const rowBg = ri % 2 ? 'bg-gray-50/60' : 'bg-white';
                   return (
                     <tr key={row.label} className={rowBg}>
                       <td className={`sticky left-0 z-10 px-4 py-2.5 font-bold text-gray-900 shadow-[1px_0_0_#e5e7eb] whitespace-nowrap ${rowBg}`}>{row.label}</td>
-                      {(p.sizeChart.columns || []).map((c, ci) => (
+                      {(sizeChart.columns || []).map((c, ci) => (
                         <td key={c} className="px-4 py-2.5 text-gray-600 tabular-nums border-t border-gray-100 whitespace-nowrap">{row.values?.[ci] ?? '—'}</td>
                       ))}
                     </tr>

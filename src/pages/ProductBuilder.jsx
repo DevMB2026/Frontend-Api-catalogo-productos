@@ -70,6 +70,8 @@ export default function ProductBuilder() {
   const [selFeatures, setSelFeatures] = useState([]);
   const [selApplications, setSelApplications] = useState([]);
   const [sizeChart, setSizeChart] = useState('');
+  const [sizeChartHombre, setSizeChartHombre] = useState('');
+  const [sizeChartMujer, setSizeChartMujer] = useState('');
   const [sc, setSc] = useState({ sizeOptionId: '', baseSizes: [], colors: [] });
   const [productMedia, setProductMedia] = useState([]);
   const [faq, setFaq] = useState([]);
@@ -104,6 +106,8 @@ export default function ProductBuilder() {
     setSelFeatures((product.features || []).map(idOf));
     setSelApplications((product.applications || []).map(idOf));
     setSizeChart(idOf(product.sizeChart) || '');
+    setSizeChartHombre(idOf(product.sizeChartHombre) || '');
+    setSizeChartMujer(idOf(product.sizeChartMujer) || '');
     setProductMedia(product.media || []);
     setFaq(product.faq || []);
     setPrefilled(true);
@@ -150,6 +154,8 @@ export default function ProductBuilder() {
         attributes: serializeAttributes(schema, attributes),
         features: selFeatures, applications: selApplications,
         sizeChart: sizeChart || null, // null explícito (no undefined) para que "quitar tabla" sí llegue al backend
+        sizeChartHombre: sizeChartHombre || null,
+        sizeChartMujer: sizeChartMujer || null,
         options: prodOptions,
         variants,
         media: productMedia.map((m) => ({ url: m.url, public_id: m.public_id, alt: m.alt, orden: m.orden, principal: m.principal })),
@@ -253,6 +259,24 @@ export default function ProductBuilder() {
       <Section title="Tabla de medidas" desc="Si no se asigna ninguna, la ficha del producto no muestra la sección de medidas.">
         <SizeChartPicker items={sizeCharts} value={sizeChart} onChange={setSizeChart} />
       </Section>
+
+      {form.sexo.includes('hombre') && form.sexo.includes('mujer') && (
+        <Section
+          title="Tabla de medidas por género"
+          desc="Este producto es para hombre y mujer a la vez. Si el corte es distinto entre ambos, asigna una tabla para cada uno — la ficha mostrará la que corresponda según el género que el cliente elija ahí. Si dejas alguna vacía, para ese género se usa la tabla general de arriba."
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1.5">Caballero (hombre)</p>
+              <SizeChartPicker items={sizeCharts} value={sizeChartHombre} onChange={setSizeChartHombre} />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1.5">Dama (mujer)</p>
+              <SizeChartPicker items={sizeCharts} value={sizeChartMujer} onChange={setSizeChartMujer} />
+            </div>
+          </div>
+        </Section>
+      )}
 
       <Section title="Preguntas frecuentes">
         <div className="space-y-2">
