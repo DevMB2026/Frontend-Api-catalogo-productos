@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { listProducts, listBrands, listCategories } from '../api/catalog';
 import ProductCard from '../components/ProductCard';
+import Hero from '../components/Hero';
 
 const selectCls = 'border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white';
 
@@ -39,7 +40,9 @@ export default function Catalogo() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Catálogo</h1>
+      <Hero />
+
+      <h1 id="productos" className="text-2xl font-bold text-gray-900 mb-1 scroll-mt-20">Catálogo</h1>
       <p className="text-sm text-gray-500 mb-6">Explora los productos disponibles</p>
 
       {/* Filtros */}
