@@ -16,14 +16,16 @@ const dedupeByUrl = (arr) => {
   return out;
 };
 
-// Heurística de género por nombre de archivo (los datos no traen un campo de género
-// por imagen, pero muchos archivos incluyen "hombre"/"mujer"/etc.).
-const RE_MASC = /(^|[_\-/])(hombre|caballero|masc|men|man)([_\-/.]|$)/i;
-const RE_FEM = /(^|[_\-/])(mujer|dama|fem|women|woman)([_\-/.]|$)/i;
+// Filtra la galería por el género seleccionado usando la etiqueta real de
+// cada foto (m.sexo, puesta a mano en el panel admin) — no un adivinado por
+// nombre de archivo, que fallaba cuando el nombre traía "hombre" y "mujer" a
+// la vez (SKUs fusionados). Las fotos sin etiquetar (sexo null/undefined)
+// sirven para cualquier género, así que nunca desaparecen por no marcarse.
 const filterGenero = (imgs, sexo) => {
-  let out = imgs;
-  if (sexo === 'hombre') out = imgs.filter((m) => !RE_FEM.test(m.url));   // excluye solo-femeninas
-  else if (sexo === 'mujer') out = imgs.filter((m) => !RE_MASC.test(m.url)); // excluye solo-masculinas
+  if (!sexo) return imgs;
+  const propias = imgs.filter((m) => m.sexo === sexo);
+  const genericas = imgs.filter((m) => !m.sexo);
+  const out = [...propias, ...genericas];
   return out.length ? out : imgs; // nunca dejar la galería vacía
 };
 

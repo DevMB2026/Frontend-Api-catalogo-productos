@@ -28,3 +28,7 @@ export const uploadImages = (id, files, { color, variantId } = {}) => {
 // Borrar una imagen concreta (por public_id) — también la elimina de Cloudinary.
 export const deleteImage = (id, publicId) =>
   apiFetch(`/products/${id}/images?public_id=${encodeURIComponent(publicId)}`, { method: 'DELETE', auth: true });
+
+// Etiqueta a qué género corresponde una foto (null = sirve para ambos).
+export const setImageGenero = (id, publicId, sexo) =>
+  apiFetch(`/products/${id}/images`, { method: 'PATCH', body: { public_id: publicId, sexo }, auth: true });
