@@ -43,6 +43,38 @@ function attrDisplay(a) {
   return v;
 }
 
+// Dibuja una sola tabla de medidas (talla + columnas). Extraído para poder
+// reusarlo cuando se muestran dos tablas (caballero/dama) a la vez.
+function SizeTable({ chart }) {
+  return (
+    <div className="overflow-x-auto rounded-xl ring-1 ring-gray-200">
+      <table className="min-w-max w-full text-sm bg-white border-separate border-spacing-0">
+        <thead>
+          <tr>
+            <th className="sticky left-0 z-10 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-900 bg-gray-100 shadow-[1px_0_0_#e5e7eb] whitespace-nowrap">Talla</th>
+            {(chart.columns || []).map((c) => (
+              <th key={c} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-50 whitespace-nowrap">{c}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {chart.rows.map((row, ri) => {
+            const rowBg = ri % 2 ? 'bg-gray-50/60' : 'bg-white';
+            return (
+              <tr key={row.label} className={rowBg}>
+                <td className={`sticky left-0 z-10 px-4 py-2.5 font-bold text-gray-900 shadow-[1px_0_0_#e5e7eb] whitespace-nowrap ${rowBg}`}>{row.label}</td>
+                {(chart.columns || []).map((c, ci) => (
+                  <td key={c} className="px-4 py-2.5 text-gray-600 tabular-nums border-t border-gray-100 whitespace-nowrap">{row.values?.[ci] ?? '—'}</td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function ProductoDetalle() {
   const { slug } = useParams();
   const { data, isLoading, error } = useQuery({ queryKey: ['product-slug', slug], queryFn: () => getProductBySlug(slug) });
@@ -88,10 +120,13 @@ export default function ProductoDetalle() {
   const chooseSexo = (s) => { setSelSexo(s); setImgIdx(0); };
   const disponible = p.activo && (!variant || variant.activo !== false);
 
-  // Si el producto tiene tabla por género (hombre/mujer con cortes distintos),
-  // se muestra la que corresponde al género seleccionado arriba — mismo
-  // selector que ya cambia color/talla/galería. Si no, se usa la tabla única
-  // de siempre (comportamiento sin cambios para productos que no la necesitan).
+  // Si el producto tiene tabla por género (hombre/mujer con cortes distintos)
+  // Y AMBAS están asignadas, se muestran las DOS tablas a la vez (caballero y
+  // dama), en vez de alternar según el selector de género de arriba — así el
+  // cliente puede comparar ambas sin tener que cambiar de selección. Si solo
+  // tiene una de las dos (o ninguna), se usa la tabla única de siempre
+  // (comportamiento sin cambios para productos que no la necesitan).
+  const ambasTablas = Boolean(p.sizeChartHombre && p.sizeChartMujer);
   const sizeChart = (selSexo === 'hombre' && p.sizeChartHombre) ? p.sizeChartHombre
     : (selSexo === 'mujer' && p.sizeChartMujer) ? p.sizeChartMujer
     : p.sizeChart;
@@ -256,39 +291,39 @@ export default function ProductoDetalle() {
         </div>
       </div>
 
-      {/* Tabla de medidas */}
-      {sizeChart?.rows?.length > 0 && (
-        <section className="mt-12">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Tabla de medidas <span className="text-sm text-gray-400 font-normal">({sizeChart.unidad})</span></h2>
-          {/* overflow-x-auto: en móvil/muchas tallas la tabla se desborda; la
-              columna de talla queda fija (sticky) para que nunca se pierda de
-              vista qué fila se está leyendo mientras se desliza el resto. */}
-          <div className="overflow-x-auto rounded-xl ring-1 ring-gray-200">
-            <table className="min-w-max w-full text-sm bg-white border-separate border-spacing-0">
-              <thead>
-                <tr>
-                  <th className="sticky left-0 z-10 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-900 bg-gray-100 shadow-[1px_0_0_#e5e7eb] whitespace-nowrap">Talla</th>
-                  {(sizeChart.columns || []).map((c) => (
-                    <th key={c} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-50 whitespace-nowrap">{c}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {sizeChart.rows.map((row, ri) => {
-                  const rowBg = ri % 2 ? 'bg-gray-50/60' : 'bg-white';
-                  return (
-                    <tr key={row.label} className={rowBg}>
-                      <td className={`sticky left-0 z-10 px-4 py-2.5 font-bold text-gray-900 shadow-[1px_0_0_#e5e7eb] whitespace-nowrap ${rowBg}`}>{row.label}</td>
-                      {(sizeChart.columns || []).map((c, ci) => (
-                        <td key={c} className="px-4 py-2.5 text-gray-600 tabular-nums border-t border-gray-100 whitespace-nowrap">{row.values?.[ci] ?? '—'}</td>
-                      ))}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
+      {/* Tabla(s) de medidas: si hay chart de hombre Y de mujer, se muestran
+          las dos (caballero y dama) una junto a la otra; si no, la tabla
+          única de siempre. */}
+      {ambasTablas ? (
+        (p.sizeChartHombre?.rows?.length > 0 || p.sizeChartMujer?.rows?.length > 0) && (
+          <section className="mt-12">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Tablas de medidas</h2>
+            {/* overflow-x-auto en cada tabla: en móvil/muchas tallas se
+                desborda; la columna de talla queda fija (sticky) para no
+                perder de vista qué fila se lee mientras se desliza el resto. */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {p.sizeChartHombre?.rows?.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 mb-2">Caballero <span className="text-xs text-gray-400 font-normal">({p.sizeChartHombre.unidad})</span></p>
+                  <SizeTable chart={p.sizeChartHombre} />
+                </div>
+              )}
+              {p.sizeChartMujer?.rows?.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 mb-2">Dama <span className="text-xs text-gray-400 font-normal">({p.sizeChartMujer.unidad})</span></p>
+                  <SizeTable chart={p.sizeChartMujer} />
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      ) : (
+        sizeChart?.rows?.length > 0 && (
+          <section className="mt-12">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Tabla de medidas <span className="text-sm text-gray-400 font-normal">({sizeChart.unidad})</span></h2>
+            <SizeTable chart={sizeChart} />
+          </section>
+        )
       )}
 
       {/* FAQ */}
