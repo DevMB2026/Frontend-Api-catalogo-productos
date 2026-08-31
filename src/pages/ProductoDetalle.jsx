@@ -109,10 +109,24 @@ export default function ProductoDetalle() {
     return ids.length === selectedIds.length && selectedIds.every((id) => ids.includes(id));
   });
 
-  // Galería: solo las imágenes del COLOR/variante activa (desduplicadas), y filtradas
-  // por el género seleccionado. Si la variante no tiene media, cae a la del producto.
-  const variantMedia = dedupeByUrl((variant && variant.media) || []);
-  const baseImages = variantMedia.length ? variantMedia : dedupeByUrl(p.media || []);
+  // El eje de color siempre se dibuja como ruedita (ver isColorAxis más abajo);
+  // se repite aquí porque la galería necesita saber cuál es el color elegido.
+  const colorOption = options.find((o) => o.option?.tipo === 'swatch' || /color/i.test(o.option?.slug || '') || /color/i.test(o.option?.nombre || ''));
+  const selectedColorId = colorOption ? selected[idOf(colorOption.option)] : null;
+
+  // Galería: las imágenes se cargan UNA vez por color (media.optionValue) y se
+  // comparten entre todas las tallas de ese color — cambiar de talla no cambia
+  // la foto, solo cambiar de color. `variant.media` y las fotos sin color
+  // asignado quedan como respaldo (productos viejos aún no migrados a este
+  // esquema, o fotos generales del producto).
+  const allMedia = dedupeByUrl(p.media || []);
+  const colorMedia = selectedColorId ? allMedia.filter((m) => idOf(m.optionValue) === selectedColorId) : [];
+  const generalMedia = allMedia.filter((m) => !m.optionValue);
+  const legacyVariantMedia = dedupeByUrl((variant && variant.media) || []);
+  const baseImages = colorMedia.length ? colorMedia
+    : legacyVariantMedia.length ? legacyVariantMedia
+    : generalMedia.length ? generalMedia
+    : allMedia;
   const images = filterGenero(baseImages, selSexo);
   const mainImg = images[imgIdx] || images[0];
 

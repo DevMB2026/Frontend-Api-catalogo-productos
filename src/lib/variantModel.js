@@ -77,12 +77,14 @@ export async function scToPayload(sc, baseSku, colorOptionId, createValue, exist
       const ov = [c.valueId];
       if (s) ov.push(s.valueId);
       const prev = byKey.get(comboKey(ov));
+      // Las imágenes viven en product.media (ligadas por color vía
+      // media.optionValue) y se comparten entre tallas — la variante ya no
+      // guarda su propia copia (ver MediaManager.jsx).
       variants.push({
         optionValues: ov,
         sku: prev?.sku || `${baseSku}-${slugify(c.label)}${s ? '-' + slugify(s.label) : ''}`.toUpperCase(),
         stock: prev?.stock || 0,
-        composicion: prev?.composicion || undefined,
-        media: (prev?.media || []).map((m) => ({ url: m.url, public_id: m.public_id, alt: m.alt, orden: m.orden, principal: m.principal }))
+        composicion: prev?.composicion || undefined
       });
     }
   }

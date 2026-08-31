@@ -16,12 +16,13 @@ export const updateProduct = (id, body) => apiFetch(`/products/${id}`, { method:
 export const deleteProduct = (id, hard = false) =>
   apiFetch(`/products/${id}${hard ? '?hard=true' : ''}`, { method: 'DELETE', auth: true });
 
-// Subida de imágenes a una variante (multipart)
-export const uploadImages = (id, files, { color, variantId } = {}) => {
+// Subida de imágenes a la galería del producto. `optionValue` (opcional) es
+// el id del color al que quedan ligadas — se comparten entre todas las
+// tallas de ese color. Sin `optionValue`, la imagen es general.
+export const uploadImages = (id, files, { optionValue } = {}) => {
   const form = new FormData();
   for (const file of files) form.append('imagenes', file);
-  if (color) form.append('color', color);
-  if (variantId) form.append('variantId', variantId);
+  if (optionValue) form.append('optionValue', optionValue);
   return apiFetch(`/products/${id}/images`, { method: 'POST', body: form, auth: true, isForm: true });
 };
 
@@ -32,3 +33,14 @@ export const deleteImage = (id, publicId) =>
 // Etiqueta a qué género corresponde una foto (null = sirve para ambos).
 export const setImageGenero = (id, publicId, sexo) =>
   apiFetch(`/products/${id}/images`, { method: 'PATCH', body: { public_id: publicId, sexo }, auth: true });
+
+// Mueve una foto ya subida a otro color (o a la galería general si
+// optionValue es null) sin volver a subirla.
+export const setImageColor = (id, publicId, optionValue) =>
+  apiFetch(`/products/${id}/images`, { method: 'PATCH', body: { public_id: publicId, optionValue: optionValue || null }, auth: true });
+
+// Reordena las imágenes de un color (o de la galería general si no se manda
+// optionValue). `publicIds` debe traer TODAS las imágenes de ese grupo, en
+// el orden deseado.
+export const reorderImages = (id, { optionValue, publicIds }) =>
+  apiFetch(`/products/${id}/images/order`, { method: 'PATCH', body: { optionValue: optionValue || null, publicIds }, auth: true });
