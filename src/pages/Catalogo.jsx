@@ -18,7 +18,7 @@ export default function Catalogo() {
   const brands = brandsData?.data ?? [];
   const categories = catsData?.data ?? [];
 
-  const params = { page, limit };
+  const params = { page, limit, sort: 'brandOrden' };
   if (brand) params.brand = brand;
   if (category) params.category = category;
   if (search) params.q = search;
