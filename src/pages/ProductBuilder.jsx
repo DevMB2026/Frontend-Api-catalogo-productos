@@ -9,6 +9,7 @@ import MultiSelectPicker from '../components/builder/MultiSelectPicker';
 import SizeChartPicker from '../components/builder/SizeChartPicker';
 import SizesAndColors from '../components/builder/SizesAndColors';
 import MediaManager from '../components/builder/MediaManager';
+import VariantesManager from '../components/builder/VariantesManager';
 
 const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
 const SEXO_OPTS = [{ value: 'hombre', label: 'Hombre' }, { value: 'mujer', label: 'Mujer' }, { value: 'unisex', label: 'Unisex / niños' }];
@@ -253,6 +254,12 @@ export default function ProductBuilder() {
       {isEdit && product && (
         <Section title="Imágenes" desc="Galería del producto y por variante (se guardan al instante).">
           <MediaManager productId={id} product={product} onChanged={refetchProduct} />
+        </Section>
+      )}
+
+      {isEdit && product && (
+        <Section title="Variantes" desc="Stock y composición por talla/color (se guardan al instante, aparte del resto del formulario).">
+          <VariantesManager productId={id} product={product} onChanged={refetchProduct} />
         </Section>
       )}
 
