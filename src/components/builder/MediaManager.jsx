@@ -151,8 +151,16 @@ export default function MediaManager({ productId, product, onChanged }) {
           <div className="px-3 pb-3">
             {subtitle && <p className="text-xs text-gray-400 mb-2">{subtitle}</p>}
             <Gallery groupMedia={groupMedia} optionValue={optionValue} />
-            <input type="file" multiple accept="image/*" disabled={busy}
-              onChange={(e) => { upload(Array.from(e.target.files), optionValue); e.target.value = ''; }} className="text-sm mt-2" />
+            <label className={`mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border cursor-pointer select-none
+              ${busy ? 'opacity-50 pointer-events-none border-gray-200 text-gray-400' : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <path d="M10 3a.75.75 0 01.75.75v8.19l2.72-2.72a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-1.06 0l-4-4a.75.75 0 111.06-1.06l2.72 2.72V3.75A.75.75 0 0110 3z" />
+                <path d="M3.5 12.5a.75.75 0 01.75.75v2.5c0 .414.336.75.75.75h10a.75.75 0 00.75-.75v-2.5a.75.75 0 011.5 0v2.5A2.25 2.25 0 0114.5 18h-9a2.25 2.25 0 01-2.25-2.25v-2.5a.75.75 0 01.75-.75z" />
+              </svg>
+              Subir imágenes
+              <input type="file" multiple accept="image/*" disabled={busy}
+                onChange={(e) => { upload(Array.from(e.target.files), optionValue); e.target.value = ''; }} className="hidden" />
+            </label>
             {tallas && tallas.length > 0 && (
               <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex items-center gap-1.5 flex-wrap">
                 <span className="text-xs text-gray-400">Tallas disponibles:</span>
