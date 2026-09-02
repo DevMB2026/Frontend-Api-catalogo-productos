@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { uploadImages, deleteImage, setImageGenero, setImageColor, reorderImages } from '../../api/catalog';
 import { swatchBg } from '../../lib/colors';
 
@@ -21,6 +21,8 @@ export default function MediaManager({ productId, product, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [open, setOpen] = useState({});
+  const [dragging, setDragging] = useState(null); // { optionValue, index, groupMedia } de la foto que se está arrastrando
+  const [dragOver, setDragOver] = useState(null); // { optionValue, index } sobre el que está pasando el mouse
 
   const necesitaGenero = (product.sexo || []).includes('hombre') && (product.sexo || []).includes('mujer');
 
@@ -72,66 +74,86 @@ export default function MediaManager({ productId, product, onChanged }) {
     catch (e) { setError(e.message); }
     finally { setBusy(false); }
   };
-  // Intercambia la foto `i` con la de al lado (`dir` -1 = antes, +1 = después)
-  // y manda la lista completa reordenada — el backend reescribe `product.media`
-  // en ese orden para ese grupo (ver reorderImages).
-  const move = async (groupMedia, optionValue, i, dir) => {
-    const j = i + dir;
-    if (j < 0 || j >= groupMedia.length) return;
+  // Mueve la foto `from` a la posición `to` (arrastrar y soltar) y manda la
+  // lista completa reordenada — el backend reescribe `product.media` en ese
+  // orden para ese grupo (ver reorderImages).
+  const reorderTo = async (groupMedia, optionValue, from, to) => {
+    if (from === to) return;
     const order = groupMedia.map((m) => m.public_id);
-    [order[i], order[j]] = [order[j], order[i]];
+    const [moved] = order.splice(from, 1);
+    order.splice(to, 0, moved);
     setBusy(true); setError(null);
     try { await reorderImages(productId, { optionValue, publicIds: order }); await onChanged(); }
     catch (e) { setError(e.message); }
     finally { setBusy(false); }
   };
+  // Al soltar el mouse en cualquier lugar mientras se arrastra una foto:
+  // si quedó sobre otra foto del mismo grupo (dragOver), confirma el
+  // reordenamiento; si no, solo cancela el arrastre.
+  useEffect(() => {
+    if (!dragging) return;
+    const onUp = () => {
+      if (dragOver && dragOver.optionValue === dragging.optionValue && dragOver.index !== dragging.index) {
+        reorderTo(dragging.groupMedia, dragging.optionValue, dragging.index, dragOver.index);
+      }
+      setDragging(null); setDragOver(null);
+    };
+    window.addEventListener('mouseup', onUp);
+    return () => window.removeEventListener('mouseup', onUp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragging, dragOver]);
 
   const Gallery = ({ groupMedia, optionValue }) => (
     <div className="flex flex-wrap gap-3">
-      {groupMedia.map((m, i) => (
-        <div key={m.public_id} className="w-16">
-          <div className="relative">
-            <img src={m.url} alt={m.alt || ''} className="w-16 h-16 object-cover rounded border border-gray-200" />
-            <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-gray-900 text-white text-[10px] leading-4 text-center">{i + 1}</span>
-            <button type="button" onClick={() => del(m.public_id)} disabled={busy}
-              className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs leading-none flex items-center justify-center hover:bg-red-700">×</button>
-          </div>
-          <div className="flex justify-center gap-1 mt-1">
-            <button type="button" title="Mover antes" disabled={busy || i === 0} onClick={() => move(groupMedia, optionValue, i, -1)}
-              className="w-6 h-5 text-xs border border-gray-200 rounded disabled:opacity-30 hover:bg-gray-50">‹</button>
-            <button type="button" title="Mover después" disabled={busy || i === groupMedia.length - 1} onClick={() => move(groupMedia, optionValue, i, 1)}
-              className="w-6 h-5 text-xs border border-gray-200 rounded disabled:opacity-30 hover:bg-gray-50">›</button>
-          </div>
-          {necesitaGenero && (
-            <select
-              value={m.sexo || ''}
-              disabled={busy}
-              onChange={(e) => setGenero(m.public_id, e.target.value || null)}
-              className="mt-1 w-16 text-[10px] border border-gray-300 rounded px-0.5 py-0.5 bg-white"
-              title="¿Para qué género es esta foto?"
-            >
-              {GENERO_OPTS.map((o) => <option key={o.label} value={o.value || ''}>{o.label}</option>)}
-            </select>
-          )}
-          <select
-            value=""
-            disabled={busy}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val) moveColor(m.public_id, val === 'general' ? null : val);
-              e.target.value = '';
-            }}
-            className="mt-1 w-16 text-[10px] border border-gray-300 rounded px-0.5 py-0.5 bg-white"
-            title="Mover esta foto a otro color"
+      {groupMedia.map((m, i) => {
+        const isDragged = dragging?.optionValue === optionValue && dragging?.index === i;
+        const isOver = dragOver?.optionValue === optionValue && dragOver?.index === i && !isDragged;
+        return (
+          <div
+            key={m.public_id}
+            className={`w-16 ${isDragged ? 'opacity-40' : ''}`}
+            onMouseDown={(e) => { if (busy) return; e.preventDefault(); setDragging({ optionValue, index: i, groupMedia }); }}
+            onMouseEnter={() => { if (dragging && dragging.optionValue === optionValue) setDragOver({ optionValue, index: i }); }}
           >
-            <option value="">Mover a…</option>
-            {optionValue !== null && <option value="general">Galería general</option>}
-            {colors.filter((c) => idOf(c) !== optionValue).map((c) => (
-              <option key={idOf(c)} value={idOf(c)}>{c.valor}</option>
-            ))}
-          </select>
-        </div>
-      ))}
+            <div className={`relative cursor-grab active:cursor-grabbing ${isOver ? 'ring-2 ring-indigo-500 rounded' : ''}`}>
+              <img src={m.url} alt={m.alt || ''} className="w-16 h-16 object-cover rounded border border-gray-200 pointer-events-none" />
+              <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-gray-900 text-white text-[10px] leading-4 text-center">{i + 1}</span>
+              <button type="button" onClick={() => del(m.public_id)} onMouseDown={(e) => e.stopPropagation()} disabled={busy}
+                className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs leading-none flex items-center justify-center hover:bg-red-700">×</button>
+            </div>
+            {necesitaGenero && (
+              <select
+                value={m.sexo || ''}
+                disabled={busy}
+                onMouseDown={(e) => e.stopPropagation()}
+                onChange={(e) => setGenero(m.public_id, e.target.value || null)}
+                className="mt-1 w-16 text-[10px] border border-gray-300 rounded px-0.5 py-0.5 bg-white"
+                title="¿Para qué género es esta foto?"
+              >
+                {GENERO_OPTS.map((o) => <option key={o.label} value={o.value || ''}>{o.label}</option>)}
+              </select>
+            )}
+            <select
+              value=""
+              disabled={busy}
+              onMouseDown={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) moveColor(m.public_id, val === 'general' ? null : val);
+                e.target.value = '';
+              }}
+              className="mt-1 w-16 text-[10px] border border-gray-300 rounded px-0.5 py-0.5 bg-white"
+              title="Mover esta foto a otro color"
+            >
+              <option value="">Mover a…</option>
+              {optionValue !== null && <option value="general">Galería general</option>}
+              {colors.filter((c) => idOf(c) !== optionValue).map((c) => (
+                <option key={idOf(c)} value={idOf(c)}>{c.valor}</option>
+              ))}
+            </select>
+          </div>
+        );
+      })}
       {groupMedia.length === 0 && <span className="text-xs text-gray-400">Sin imágenes</span>}
     </div>
   );
