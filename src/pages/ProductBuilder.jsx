@@ -159,7 +159,10 @@ export default function ProductBuilder() {
         sizeChartMujer: sizeChartMujer || null,
         options: prodOptions,
         variants,
-        media: productMedia.map((m) => ({ url: m.url, public_id: m.public_id, alt: m.alt, orden: m.orden, principal: m.principal })),
+        media: productMedia.map((m) => ({
+          url: m.url, public_id: m.public_id, alt: m.alt, orden: m.orden, principal: m.principal,
+          optionValue: idOf(m.optionValue) || undefined, sexo: m.sexo || undefined
+        })),
         faq: faq.filter((f) => f.pregunta && f.respuesta)
       };
       if (isEdit) await updateProduct(id, payload);
