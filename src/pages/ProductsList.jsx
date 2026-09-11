@@ -1,14 +1,18 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { listProducts, deleteProduct } from '../api/catalog';
 
 
 export default function ProductsList() {
   const qc = useQueryClient();
+  const [page, setPage] = useState(1);
+  const limit = 50;
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['products', { activo: 'all' }],
-    queryFn: () => listProducts({ activo: 'all', limit: 50, sort: '-createdAt' })
+  const { data, isLoading, error, isFetching } = useQuery({
+    queryKey: ['products', { activo: 'all', page, limit }],
+    queryFn: () => listProducts({ activo: 'all', page, limit, sort: '-createdAt' }),
+    placeholderData: keepPreviousData
   });
 
   const del = useMutation({
@@ -20,6 +24,7 @@ export default function ProductsList() {
   if (error) return <p className="text-red-600">Error: {error.message}</p>;
 
   const products = data?.data ?? [];
+  const pagination = data?.pagination;
 
   return (
     <div>
@@ -36,7 +41,7 @@ export default function ProductsList() {
       {products.length === 0 ? (
         <p className="text-gray-500">Aún no hay productos. Crea el primero.</p>
       ) : (
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <div className={`overflow-x-auto bg-white rounded-lg shadow ${isFetching ? 'opacity-60' : ''}`}>
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 text-gray-600 text-left">
               <tr>
@@ -78,6 +83,26 @@ export default function ProductsList() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="px-4 py-2 text-sm rounded-md border border-gray-300 disabled:opacity-50 hover:bg-white"
+          >
+            ← Anterior
+          </button>
+          <span className="text-sm text-gray-600">Página {pagination.page} de {pagination.totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+            disabled={page >= pagination.totalPages}
+            className="px-4 py-2 text-sm rounded-md border border-gray-300 disabled:opacity-50 hover:bg-white"
+          >
+            Siguiente →
+          </button>
         </div>
       )}
     </div>
