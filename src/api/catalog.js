@@ -39,6 +39,14 @@ export const setImageGenero = (id, publicId, sexo) =>
 export const setImageColor = (id, publicId, optionValue) =>
   apiFetch(`/products/${id}/images`, { method: 'PATCH', body: { public_id: publicId, optionValue: optionValue || null }, auth: true });
 
+// Marca una foto como "principal" (la que usan las tarjetas del catálogo y
+// las miniaturas — ver main_image() en los plugins de WordPress y
+// ProductCard.jsx). Antes no había forma de activar este campo desde el
+// panel, así que la portada de cada tarjeta terminaba siendo "la primera
+// foto que hubiera", sin importar si era de frente o de espaldas.
+export const setImagePrincipal = (id, publicId) =>
+  apiFetch(`/products/${id}/images`, { method: 'PATCH', body: { public_id: publicId, principal: true }, auth: true });
+
 // Reordena las imágenes de un color (o de la galería general si no se manda
 // optionValue). `publicIds` debe traer TODAS las imágenes de ese grupo, en
 // el orden deseado.

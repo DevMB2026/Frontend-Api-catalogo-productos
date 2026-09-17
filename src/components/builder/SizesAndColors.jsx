@@ -49,13 +49,14 @@ export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption,
     const vals = (valuesByOption[opt._id] || []).map((v) => ({ label: v.valor, valueId: v._id }));
     set({ sizeOptionId: opt._id, baseSizes: vals });
   };
-  // Asegura que haya una Opción de talla asociada al escribir tallas custom.
-  const ensureSizeOption = () => {
-    if (sc.sizeOptionId) return sc.sizeOptionId;
-    const first = sizeOptions[0];
-    if (first) { set({ sizeOptionId: first._id }); return first._id; }
-    return '';
-  };
+  // Id de la Opción de talla a usar al escribir tallas custom: la ya elegida,
+  // o la primera disponible como respaldo. Es puro (no toca el estado) a
+  // propósito: se funde en el MISMO set() que ya actualiza los chips, en vez
+  // de hacer un set() aparte — dos set() seguidos en el mismo evento parten
+  // del mismo `sc` capturado en el closure, así que el segundo pisa por
+  // completo lo que el primero acababa de guardar (sizeOptionId se perdía
+  // silenciosamente y el guardado fallaba con "option: ID inválido").
+  const sizeOptionIdFor = () => sc.sizeOptionId || sizeOptions[0]?._id || '';
 
   const usedColorIds = new Set(sc.colors.map((c) => c.valueId).filter(Boolean));
   const usedColorLabels = new Set(sc.colors.map((c) => c.label.toLowerCase()));
@@ -87,7 +88,7 @@ export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption,
         <p className="text-xs text-gray-500 mb-3">Se aplican a todos los colores automáticamente. Solo edítalas por color si un color tiene tallas distintas.</p>
         <SizeChips
           sizes={sc.baseSizes}
-          onChange={(sizes) => { ensureSizeOption(); set({ baseSizes: sizes }); }}
+          onChange={(sizes) => set({ sizeOptionId: sizeOptionIdFor(), baseSizes: sizes })}
         />
       </div>
 
@@ -135,7 +136,14 @@ export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption,
               </div>
               {c.override && (
                 <div className="mt-3">
-                  <SizeChips sizes={c.sizes} onChange={(sizes) => { ensureSizeOption(); updateColor(i, { sizes }); }} placeholder="Tallas para este color…" />
+                  <SizeChips
+                    sizes={c.sizes}
+                    onChange={(sizes) => set({
+                      sizeOptionId: sizeOptionIdFor(),
+                      colors: sc.colors.map((cc, idx) => (idx === i ? { ...cc, sizes } : cc)),
+                    })}
+                    placeholder="Tallas para este color…"
+                  />
                 </div>
               )}
             </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { uploadImages, deleteImage, setImageGenero, setImageColor, reorderImages } from '../../api/catalog';
+import { uploadImages, deleteImage, setImageGenero, setImageColor, setImagePrincipal, reorderImages } from '../../api/catalog';
 import { swatchBg } from '../../lib/colors';
 
 const GENERO_OPTS = [
@@ -65,6 +65,16 @@ export default function MediaManager({ productId, product, onChanged }) {
     catch (e) { setError(e.message); }
     finally { setBusy(false); }
   };
+  // Marca esta foto como la portada del producto (la que usan las tarjetas
+  // del catálogo). Debe quedar UNA sola foto marcada por producto — antes de
+  // pedir la nueva, se limpia el flag de la que ya lo tuviera (si el backend
+  // ya se lo garantiza, esta segunda llamada simplemente no hace nada raro).
+  const setPrincipal = async (publicId) => {
+    setBusy(true); setError(null);
+    try { await setImagePrincipal(productId, publicId); await onChanged(); }
+    catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  };
   // Reasigna una foto YA subida a otro color (o a la galería general) sin
   // volver a subirla — para arreglar fotos que quedaron sueltas antes de
   // que existiera la galería por color.
@@ -120,6 +130,15 @@ export default function MediaManager({ productId, product, onChanged }) {
               <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-gray-900 text-white text-[10px] leading-4 text-center">{i + 1}</span>
               <button type="button" onClick={() => del(m.public_id)} onMouseDown={(e) => e.stopPropagation()} disabled={busy}
                 className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs leading-none flex items-center justify-center hover:bg-red-700">×</button>
+              <button
+                type="button"
+                onClick={() => setPrincipal(m.public_id)}
+                onMouseDown={(e) => e.stopPropagation()}
+                disabled={busy || m.principal}
+                title={m.principal ? 'Portada del catálogo (esta foto)' : 'Usar como portada del catálogo'}
+                className={`absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full text-xs leading-none flex items-center justify-center
+                  ${m.principal ? 'bg-amber-400 text-white' : 'bg-white text-gray-400 border border-gray-300 hover:text-amber-500 hover:border-amber-400'}`}
+              >★</button>
             </div>
             {necesitaGenero && (
               <select
@@ -200,6 +219,10 @@ export default function MediaManager({ productId, product, onChanged }) {
   return (
     <div className="space-y-2.5">
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-md px-3 py-2">{error}</div>}
+      <p className="text-xs text-gray-500 bg-gray-50 rounded-md px-3 py-2">
+        La estrella (★) marca la foto que se usa como portada en las tarjetas del catálogo — sin marcar ninguna, se usa
+        la primera foto que haya, sin importar el ángulo. Márcala en la que se vea de frente.
+      </p>
       {necesitaGenero && (
         <p className="text-xs text-gray-500 bg-gray-50 rounded-md px-3 py-2">
           Este producto es para hombre y mujer. Marca debajo de cada foto a quién corresponde ("Ambos" si sirve para los
