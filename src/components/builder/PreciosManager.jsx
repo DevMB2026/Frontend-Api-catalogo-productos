@@ -1,0 +1,117 @@
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getProductPrices, updateProductPrices } from '../../api/adminPrice';
+
+const inputCls = 'w-full border border-gray-300 rounded-md pl-6 pr-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
+
+const TIPOS = [
+  { key: 'menudeo', label: 'Menudeo' },
+  { key: 'mayoreo', label: 'Mayoreo' },
+  { key: 'distribuidor', label: 'Distribuidor' },
+  { key: 'master', label: 'Master' }
+];
+
+const toInputValue = (v) => (v === null || v === undefined ? '' : String(v));
+
+// Precios: SIEMPRE se leen y guardan por su propio endpoint admin
+// (/products/:id/prices) — nunca vienen embebidos en `product` (el catálogo
+// público jamás los incluye, así que tampoco existen en la respuesta de
+// getProduct que usa el resto del formulario). Guardar aquí NO toca
+// variantes, colores, tallas, imágenes, marca ni categoría, y viceversa: es
+// independiente del submit general del producto. Sin overridesPorVariante:
+// esta pantalla solo maneja los 4 precios a nivel producto.
+export default function PreciosManager({ productId }) {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ['product-prices', productId],
+    queryFn: () => getProductPrices(productId),
+    enabled: !!productId
+  });
+  const prices = data?.data;
+
+  const [form, setForm] = useState({ menudeo: '', mayoreo: '', distribuidor: '', master: '' });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [saved, setSaved] = useState(false);
+
+  // Precarga los valores actuales cuando llegan del servidor. Un precio en
+  // null se muestra vacío ("aún no definido") — nunca se inventa un valor.
+  // OJO: no resetea `saved` aquí — este efecto también corre justo después
+  // de guardar (el refetch de save() cambia `prices`), y resetearlo ahí
+  // taparía el "Guardado ✓" antes de que el admin llegue a verlo. `setField`
+  // ya se encarga de apagarlo en cuanto el admin vuelve a escribir.
+  useEffect(() => {
+    if (!prices) return;
+    setForm({
+      menudeo: toInputValue(prices.menudeo),
+      mayoreo: toInputValue(prices.mayoreo),
+      distribuidor: toInputValue(prices.distribuidor),
+      master: toInputValue(prices.master)
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prices]);
+
+  const setField = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setSaved(false); setFieldErrors((fe) => ({ ...fe, [k]: undefined })); };
+
+  const dirty = !!prices && TIPOS.some(({ key }) => toInputValue(prices[key]) !== form[key]);
+
+  const save = async () => {
+    setBusy(true); setError(null); setFieldErrors({});
+    try {
+      const payload = {};
+      const errs = {};
+      for (const { key, label } of TIPOS) {
+        const raw = form[key].trim();
+        if (raw === '') { payload[key] = null; continue; }
+        const num = Number(raw);
+        if (Number.isNaN(num) || num < 0) { errs[key] = `${label} debe ser un número válido, mayor o igual a 0`; continue; }
+        payload[key] = num;
+      }
+      if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
+
+      await updateProductPrices(productId, payload);
+      await qc.invalidateQueries({ queryKey: ['product-prices', productId] });
+      setSaved(true);
+    } catch (e) {
+      setError(e.message || 'No se pudieron guardar los precios');
+      setFieldErrors(e.fields || {});
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (isLoading) return <p className="text-sm text-gray-400">Cargando precios…</p>;
+
+  return (
+    <div className="space-y-3">
+      {error && <div className="bg-red-50 text-red-700 text-sm rounded-md px-3 py-2">{error}</div>}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {TIPOS.map(({ key, label }) => (
+          <div key={key}>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+              <input
+                type="number" min="0" step="0.01" placeholder="Sin definir"
+                className={inputCls}
+                value={form[key]}
+                onChange={(e) => setField(key, e.target.value)}
+              />
+            </div>
+            {fieldErrors[key] && <p className="text-xs text-red-600 mt-1">{fieldErrors[key]}</p>}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button type="button" disabled={busy || !dirty} onClick={save}
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-md">
+          {busy ? 'Guardando…' : 'Guardar precios'}
+        </button>
+        {saved && !dirty && <span className="text-xs text-green-600">Guardado ✓</span>}
+      </div>
+    </div>
+  );
+}

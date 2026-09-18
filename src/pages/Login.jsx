@@ -15,8 +15,12 @@ export default function Login() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
-      navigate('/admin');
+      // login() ya devolvía { role, ... } (nada nuevo del backend) — antes
+      // se ignoraba y siempre se navegaba a /admin. Un role:'usuario' no
+      // tiene panel administrativo todavía, así que lo mandamos al catálogo
+      // en vez de dejar que ProtectedRoute lo rebote justo después.
+      const user = await login(email, password);
+      navigate(user.role === 'usuario' ? '/' : '/admin');
     } catch (err) {
       setError(err.message || 'No se pudo iniciar sesión');
     } finally {

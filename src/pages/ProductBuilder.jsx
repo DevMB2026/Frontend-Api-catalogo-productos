@@ -10,6 +10,7 @@ import SizeChartPicker from '../components/builder/SizeChartPicker';
 import SizesAndColors from '../components/builder/SizesAndColors';
 import MediaManager from '../components/builder/MediaManager';
 import VariantesManager from '../components/builder/VariantesManager';
+import PreciosManager from '../components/builder/PreciosManager';
 
 const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
 const SEXO_OPTS = [{ value: 'hombre', label: 'Hombre' }, { value: 'mujer', label: 'Mujer' }, { value: 'unisex', label: 'Unisex / niños' }];
@@ -263,6 +264,12 @@ export default function ProductBuilder() {
       {isEdit && product && (
         <Section title="Variantes" desc="Stock y composición por talla/color (se guardan al instante, aparte del resto del formulario).">
           <VariantesManager productId={id} product={product} onChanged={refetchProduct} />
+        </Section>
+      )}
+
+      {isEdit && product && (
+        <Section title="Precios" desc="Privados — nunca se muestran en el catálogo público. Se guardan aparte del resto del formulario; dejar un campo vacío lo deja sin definir.">
+          <PreciosManager productId={id} />
         </Section>
       )}
 

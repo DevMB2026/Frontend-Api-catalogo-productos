@@ -20,6 +20,7 @@ import BrandsAdmin from './pages/admin/BrandsAdmin';
 import DistribuidoresAdmin from './pages/admin/DistribuidoresAdmin';
 import CatalogosAdmin from './pages/admin/CatalogosAdmin';
 import NotificacionesAdmin from './pages/admin/NotificacionesAdmin';
+import PreciosUsuariosAdmin from './pages/admin/PreciosUsuariosAdmin';
 
 export default function App() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="catalogos" element={<CatalogosAdmin />} />
         <Route path="distribuidores" element={<DistribuidoresAdmin />} />
         <Route path="notificaciones" element={<NotificacionesAdmin />} />
+        <Route path="usuarios-precios" element={<PreciosUsuariosAdmin />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
