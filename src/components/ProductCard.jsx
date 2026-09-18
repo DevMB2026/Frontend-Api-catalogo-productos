@@ -20,7 +20,16 @@ export default function ProductCard({ product }) {
       to={`/producto/${product.slug}`}
       className="group bg-white rounded-lg shadow-sm hover:shadow-md transition overflow-hidden flex flex-col"
     >
-      <div className="aspect-[2/3] bg-gray-100 overflow-hidden">
+      <div className="relative aspect-[2/3] bg-gray-100 overflow-hidden">
+        {product.badges?.length > 0 && (
+          <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 items-start">
+            {product.badges.map((b) => (
+              <span key={b._id} className="bg-rose-600 text-white text-[11px] font-semibold uppercase tracking-wide px-2 py-1 rounded shadow-sm">
+                {b.nombre}
+              </span>
+            ))}
+          </div>
+        )}
         {img ? (
           <img src={img} alt={product.nombre} className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
         ) : (

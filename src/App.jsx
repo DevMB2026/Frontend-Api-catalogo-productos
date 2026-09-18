@@ -11,6 +11,7 @@ import DistributorAccess from './pages/DistributorAccess';
 import AttributesAdmin from './pages/admin/AttributesAdmin';
 import FeaturesAdmin from './pages/admin/FeaturesAdmin';
 import ApplicationsAdmin from './pages/admin/ApplicationsAdmin';
+import BadgesAdmin from './pages/admin/BadgesAdmin';
 import OptionsAdmin from './pages/admin/OptionsAdmin';
 import OptionValuesAdmin from './pages/admin/OptionValuesAdmin';
 import SizeChartsAdmin from './pages/admin/SizeChartsAdmin';
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="atributos" element={<AttributesAdmin />} />
         <Route path="caracteristicas" element={<FeaturesAdmin />} />
         <Route path="aplicaciones" element={<ApplicationsAdmin />} />
+        <Route path="etiquetas" element={<BadgesAdmin />} />
         <Route path="opciones" element={<OptionsAdmin />} />
         <Route path="opciones/:optionId/valores" element={<OptionValuesAdmin />} />
         <Route path="tablas-medidas" element={<SizeChartsAdmin />} />

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listBrands, listCategories, createProduct, updateProduct, getProduct } from '../api/catalog';
-import { optionsApi, optionValuesApi, featuresApi, applicationsApi, sizeChartsApi, getAttributeSchema } from '../api/pim';
+import { optionsApi, optionValuesApi, featuresApi, applicationsApi, badgesApi, sizeChartsApi, getAttributeSchema } from '../api/pim';
 import { scFromProduct, scToPayload } from '../lib/variantModel';
 import DynamicAttributeForm from '../components/builder/DynamicAttributeForm';
 import MultiSelectPicker from '../components/builder/MultiSelectPicker';
@@ -46,6 +46,7 @@ export default function ProductBuilder() {
   const { data: valuesData } = useQuery({ queryKey: ['option-values-all'], queryFn: () => optionValuesApi.list() });
   const { data: featuresData } = useQuery({ queryKey: ['features'], queryFn: () => featuresApi.list() });
   const { data: appsData } = useQuery({ queryKey: ['applications'], queryFn: () => applicationsApi.list() });
+  const { data: badgesData } = useQuery({ queryKey: ['badges'], queryFn: () => badgesApi.list() });
   const { data: sizeChartsData } = useQuery({ queryKey: ['size-charts'], queryFn: () => sizeChartsApi.list() });
 
   const brands = brandsData?.data ?? [];
@@ -54,6 +55,7 @@ export default function ProductBuilder() {
   const values = valuesData?.data ?? [];
   const features = featuresData?.data ?? [];
   const applications = appsData?.data ?? [];
+  const badges = badgesData?.data ?? [];
   const sizeCharts = sizeChartsData?.data ?? [];
 
   const valuesByOption = {};
@@ -71,6 +73,7 @@ export default function ProductBuilder() {
   const [attributes, setAttributes] = useState({});
   const [selFeatures, setSelFeatures] = useState([]);
   const [selApplications, setSelApplications] = useState([]);
+  const [selBadges, setSelBadges] = useState([]);
   const [sizeChart, setSizeChart] = useState('');
   const [sizeChartHombre, setSizeChartHombre] = useState('');
   const [sizeChartMujer, setSizeChartMujer] = useState('');
@@ -109,6 +112,7 @@ export default function ProductBuilder() {
     setAttributes(Object.fromEntries((product.attributes || []).map((a) => [idOf(a.attribute), a.value])));
     setSelFeatures((product.features || []).map(idOf));
     setSelApplications((product.applications || []).map(idOf));
+    setSelBadges((product.badges || []).map(idOf));
     setSizeChart(idOf(product.sizeChart) || '');
     setSizeChartHombre(idOf(product.sizeChartHombre) || '');
     setSizeChartMujer(idOf(product.sizeChartMujer) || '');
@@ -158,7 +162,7 @@ export default function ProductBuilder() {
         descripcion: form.descripcion || undefined,
         sexo: form.sexo, brand: form.brand, category: form.category, destacado: form.destacado,
         attributes: serializeAttributes(schema, attributes),
-        features: selFeatures, applications: selApplications,
+        features: selFeatures, applications: selApplications, badges: selBadges,
         sizeChart: sizeChart || null, // null explícito (no undefined) para que "quitar tabla" sí llegue al backend
         sizeChartHombre: sizeChartHombre || null,
         sizeChartMujer: sizeChartMujer || null,
@@ -265,6 +269,9 @@ export default function ProductBuilder() {
       </Section>
       <Section title="Aplicaciones (personalización)">
         <MultiSelectPicker items={applications} selected={selApplications} onChange={setSelApplications} empty="Sin aplicaciones." />
+      </Section>
+      <Section title="Etiquetas" desc="Insignias promocionales sobre la tarjeta del producto (New Arrival, Últimas piezas…).">
+        <MultiSelectPicker items={badges} selected={selBadges} onChange={setSelBadges} empty="Sin etiquetas. Créalas en Admin → Etiquetas." />
       </Section>
 
       <Section title="Tallas y colores" desc="Define las tallas base (aplican a todos los colores) y los colores. Las variantes se generan solas.">

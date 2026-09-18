@@ -21,6 +21,7 @@ function crud(base) {
 export const attributesApi = crud('/attributes');
 export const featuresApi = crud('/features');
 export const applicationsApi = crud('/applications');
+export const badgesApi = crud('/badges');
 export const optionsApi = crud('/options');
 export const optionValuesApi = crud('/option-values');
 export const sizeChartsApi = crud('/size-charts');

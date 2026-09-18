@@ -26,6 +26,7 @@ export default function Layout() {
             <NavLink to="/admin/atributos" className={navClass}>Atributos</NavLink>
             <NavLink to="/admin/caracteristicas" className={navClass}>Características</NavLink>
             <NavLink to="/admin/aplicaciones" className={navClass}>Aplicaciones</NavLink>
+            <NavLink to="/admin/etiquetas" className={navClass}>Etiquetas</NavLink>
             <NavLink to="/admin/opciones" className={navClass}>Opciones</NavLink>
             <NavLink to="/admin/tablas-medidas" className={navClass}>Tablas</NavLink>
             <NavLink to="/admin/categorias" className={navClass}>Categorías</NavLink>

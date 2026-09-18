@@ -184,6 +184,11 @@ export default function ProductoDetalle() {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Disponible
               </span>
             )}
+            {p.badges?.map((b) => (
+              <span key={b._id} className="bg-rose-600 text-white text-xs font-semibold uppercase tracking-wide px-2.5 py-0.5 rounded-full">
+                {b.nombre}
+              </span>
+            ))}
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2 tracking-tight text-balance">{p.nombre}</h1>
