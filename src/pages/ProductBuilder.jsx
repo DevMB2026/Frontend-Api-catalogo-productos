@@ -67,7 +67,7 @@ export default function ProductBuilder() {
   const { data: productData, refetch: refetchProduct } = useQuery({ queryKey: ['product', id], queryFn: () => getProduct(id), enabled: isEdit });
   const product = productData?.data;
 
-  const [form, setForm] = useState({ nombre: '', sku: '', descripcion: '', sexo: ['unisex'], brand: '', category: '', destacado: false });
+  const [form, setForm] = useState({ nombre: '', sku: '', skuHombre: '', skuMujer: '', descripcion: '', sexo: ['unisex'], brand: '', category: '', destacado: false });
   const [attributes, setAttributes] = useState({});
   const [selFeatures, setSelFeatures] = useState([]);
   const [selApplications, setSelApplications] = useState([]);
@@ -100,7 +100,9 @@ export default function ProductBuilder() {
   useEffect(() => {
     if (!isEdit || !product || prefilled) return;
     setForm({
-      nombre: product.nombre, sku: product.sku, descripcion: product.descripcion || '',
+      nombre: product.nombre, sku: product.sku,
+      skuHombre: product.skuHombre || '', skuMujer: product.skuMujer || '',
+      descripcion: product.descripcion || '',
       sexo: Array.isArray(product.sexo) ? product.sexo : (product.sexo ? [product.sexo] : ['unisex']),
       brand: idOf(product.brand) || '', category: idOf(product.category) || '', destacado: !!product.destacado
     });
@@ -151,7 +153,9 @@ export default function ProductBuilder() {
     try {
       const { options: prodOptions, variants } = await scToPayload(sc, form.sku, colorOptionId, createValue, product?.variants || []);
       const payload = {
-        nombre: form.nombre, sku: form.sku, descripcion: form.descripcion || undefined,
+        nombre: form.nombre, sku: form.sku,
+        skuHombre: form.skuHombre || null, skuMujer: form.skuMujer || null,
+        descripcion: form.descripcion || undefined,
         sexo: form.sexo, brand: form.brand, category: form.category, destacado: form.destacado,
         attributes: serializeAttributes(schema, attributes),
         features: selFeatures, applications: selApplications,
@@ -204,6 +208,18 @@ export default function ProductBuilder() {
             <label className="block text-sm font-medium text-gray-700 mb-1">SKU *</label>
             <input className={inputCls} value={form.sku} onChange={(e) => set('sku', e.target.value)} required />
           </div>
+          {form.sexo.includes('hombre') && form.sexo.includes('mujer') && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">SKU caballero</label>
+                <input className={inputCls} value={form.skuHombre} onChange={(e) => set('skuHombre', e.target.value)} placeholder="Opcional" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">SKU dama</label>
+                <input className={inputCls} value={form.skuMujer} onChange={(e) => set('skuMujer', e.target.value)} placeholder="Opcional" />
+              </div>
+            </>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">¿Para quién? *</label>
             <div className="flex gap-4 pt-2">
