@@ -7,6 +7,9 @@ export const listProducts = (params = {}) => {
 };
 export const getProduct = (id) => apiFetch(`/products/${id}`);
 export const getProductBySlug = (slug) => apiFetch(`/products/slug/${slug}`);
+// Busca por SKU del producto, alias, SKU dama/caballero o SKU del ERP de una variante.
+// Devuelve { data: producto, matchedVariant? } y 404 si no existe.
+export const getProductBySku = (sku) => apiFetch(`/products/sku/${encodeURIComponent(sku)}`);
 export const listBrands = () => apiFetch('/brands');
 export const listCategories = () => apiFetch('/categories');
 

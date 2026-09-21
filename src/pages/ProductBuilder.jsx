@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listBrands, listCategories, createProduct, updateProduct, getProduct } from '../api/catalog';
 import { optionsApi, optionValuesApi, featuresApi, applicationsApi, badgesApi, sizeChartsApi, getAttributeSchema } from '../api/pim';
@@ -10,6 +10,7 @@ import SizeChartPicker from '../components/builder/SizeChartPicker';
 import SizesAndColors from '../components/builder/SizesAndColors';
 import MediaManager from '../components/builder/MediaManager';
 import VariantesManager from '../components/builder/VariantesManager';
+import SkusErpTabla from '../components/builder/SkusErpTabla';
 import PreciosManager from '../components/builder/PreciosManager';
 
 const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
@@ -38,6 +39,8 @@ export default function ProductBuilder() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const highlightSku = searchParams.get('sku'); // viene de la búsqueda por SKU del ERP en la lista de productos
   const isEdit = !!id;
 
   const { data: brandsData } = useQuery({ queryKey: ['brands'], queryFn: listBrands });
@@ -287,6 +290,12 @@ export default function ProductBuilder() {
       {isEdit && product && (
         <Section title="Variantes" desc="Stock y composición por talla/color (se guardan al instante, aparte del resto del formulario).">
           <VariantesManager productId={id} product={product} onChanged={refetchProduct} />
+        </Section>
+      )}
+
+      {isEdit && product && (
+        <Section title="SKUs del ERP" desc="Código del ERP de cada variante color+talla (uno por género en productos dama+caballero). Solo consulta: se cargan con el script de importación.">
+          <SkusErpTabla product={product} colorOptionId={colorOptionId} highlightSku={highlightSku} />
         </Section>
       )}
 
