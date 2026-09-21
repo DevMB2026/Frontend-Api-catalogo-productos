@@ -34,6 +34,7 @@ export default function VariantesManager({ productId, product, onChanged }) {
     try {
       const payload = variants.map((v) => ({
         sku: v.sku,
+        skusErp: v.skusErp?.length ? v.skusErp.map(({ sku, sexo }) => ({ sku, sexo })) : undefined,
         optionValues: (v.optionValues || []).map(idOf),
         composicion: composicion || undefined,
         stock: Number(stock) || 0,

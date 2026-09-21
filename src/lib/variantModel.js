@@ -83,6 +83,8 @@ export async function scToPayload(sc, baseSku, colorOptionId, createValue, exist
       variants.push({
         optionValues: ov,
         sku: prev?.sku || `${baseSku}-${slugify(c.label)}${s ? '-' + slugify(s.label) : ''}`.toUpperCase(),
+        // SKUs del ERP (se cargan por script): sin esto, guardar el producto los borraría.
+        skusErp: prev?.skusErp?.length ? prev.skusErp.map(({ sku, sexo }) => ({ sku, sexo })) : undefined,
         stock: prev?.stock || 0,
         composicion: prev?.composicion || undefined
       });
