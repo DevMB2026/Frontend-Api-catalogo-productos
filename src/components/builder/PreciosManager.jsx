@@ -5,15 +5,28 @@ import { getProductPrices, updateProductPrices } from '../../api/adminPrice';
 const inputCls = 'w-full border border-gray-300 rounded-md pl-6 pr-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
 
 // Menudeo, mayoreo y volumen son por cantidad; distribuidor y master son
-// precios especiales (no dependen de la cantidad). `rango` solo se muestra en
-// productos de Prezenza, que es la marca que define esos rangos.
+// precios especiales (no dependen de la cantidad). Cada marca define sus
+// rangos y qué niveles usa; una marca que no esté aquí muestra los 5 niveles
+// sin rango. `ocultos` no se muestran ni se envían al guardar (no se tocan).
 const TIPOS = [
-  { key: 'menudeo', label: 'Menudeo', rango: '1–30 pzas' },
-  { key: 'mayoreo', label: 'Mayoreo', rango: '31–200 pzas' },
-  { key: 'volumen', label: 'Volumen', rango: '201 pzas o más' },
+  { key: 'menudeo', label: 'Menudeo' },
+  { key: 'mayoreo', label: 'Mayoreo' },
+  { key: 'volumen', label: 'Volumen' },
   { key: 'distribuidor', label: 'Distribuidor' },
   { key: 'master', label: 'Master' }
 ];
+const REGLAS_BE_FRESH = {
+  rangos: { menudeo: '1–11 pzas', mayoreo: '12 pzas o más', master: 'precio especial' },
+  ocultos: ['volumen', 'distribuidor'] // volumen (201+) es solo de Prezenza; distribuidor no aplica en Be Fresh ni Security
+};
+const REGLAS_POR_MARCA = {
+  prezenza: {
+    rangos: { menudeo: '1–30 pzas', mayoreo: '31–200 pzas', volumen: '201 pzas o más', distribuidor: 'precio especial', master: 'precio especial' },
+    ocultos: []
+  },
+  fitbefresh: REGLAS_BE_FRESH,
+  befreshsecurity: REGLAS_BE_FRESH
+};
 const EMPTY_FORM = { menudeo: '', mayoreo: '', volumen: '', distribuidor: '', master: '' };
 
 const toInputValue = (v) => (v === null || v === undefined ? '' : String(v));
@@ -27,6 +40,8 @@ const toInputValue = (v) => (v === null || v === undefined ? '' : String(v));
 // esta pantalla solo maneja los 5 precios a nivel producto.
 export default function PreciosManager({ productId, brandSlug }) {
   const qc = useQueryClient();
+  const reglas = REGLAS_POR_MARCA[brandSlug] || { rangos: {}, ocultos: [] };
+  const visibles = TIPOS.filter(({ key }) => !reglas.ocultos.includes(key));
   const { data, isLoading } = useQuery({
     queryKey: ['product-prices', productId],
     queryFn: () => getProductPrices(productId),
@@ -60,14 +75,14 @@ export default function PreciosManager({ productId, brandSlug }) {
 
   const setField = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setSaved(false); setFieldErrors((fe) => ({ ...fe, [k]: undefined })); };
 
-  const dirty = !!prices && TIPOS.some(({ key }) => toInputValue(prices[key]) !== form[key]);
+  const dirty = !!prices && visibles.some(({ key }) => toInputValue(prices[key]) !== form[key]);
 
   const save = async () => {
     setBusy(true); setError(null); setFieldErrors({});
     try {
       const payload = {};
       const errs = {};
-      for (const { key, label } of TIPOS) {
+      for (const { key, label } of visibles) {
         const raw = form[key].trim();
         if (raw === '') { payload[key] = null; continue; }
         const num = Number(raw);
@@ -94,10 +109,10 @@ export default function PreciosManager({ productId, brandSlug }) {
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-md px-3 py-2">{error}</div>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {TIPOS.map(({ key, label, rango }) => (
+        {visibles.map(({ key, label }) => (
           <div key={key}>
             <label className="block text-xs font-medium text-gray-500 mb-1">
-              {label}{rango && brandSlug === 'prezenza' && <span className="text-gray-400 font-normal"> · {rango}</span>}
+              {label}{reglas.rangos[key] && <span className="text-gray-400 font-normal"> · {reglas.rangos[key]}</span>}
             </label>
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
