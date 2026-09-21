@@ -4,12 +4,17 @@ import { getProductPrices, updateProductPrices } from '../../api/adminPrice';
 
 const inputCls = 'w-full border border-gray-300 rounded-md pl-6 pr-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
 
+// Menudeo, mayoreo y volumen son por cantidad; distribuidor y master son
+// precios especiales (no dependen de la cantidad). `rango` solo se muestra en
+// productos de Prezenza, que es la marca que define esos rangos.
 const TIPOS = [
-  { key: 'menudeo', label: 'Menudeo' },
-  { key: 'mayoreo', label: 'Mayoreo' },
+  { key: 'menudeo', label: 'Menudeo', rango: '1–30 pzas' },
+  { key: 'mayoreo', label: 'Mayoreo', rango: '31–200 pzas' },
+  { key: 'volumen', label: 'Volumen', rango: '201 pzas o más' },
   { key: 'distribuidor', label: 'Distribuidor' },
   { key: 'master', label: 'Master' }
 ];
+const EMPTY_FORM = { menudeo: '', mayoreo: '', volumen: '', distribuidor: '', master: '' };
 
 const toInputValue = (v) => (v === null || v === undefined ? '' : String(v));
 
@@ -19,8 +24,8 @@ const toInputValue = (v) => (v === null || v === undefined ? '' : String(v));
 // getProduct que usa el resto del formulario). Guardar aquí NO toca
 // variantes, colores, tallas, imágenes, marca ni categoría, y viceversa: es
 // independiente del submit general del producto. Sin overridesPorVariante:
-// esta pantalla solo maneja los 4 precios a nivel producto.
-export default function PreciosManager({ productId }) {
+// esta pantalla solo maneja los 5 precios a nivel producto.
+export default function PreciosManager({ productId, brandSlug }) {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ['product-prices', productId],
@@ -29,7 +34,7 @@ export default function PreciosManager({ productId }) {
   });
   const prices = data?.data;
 
-  const [form, setForm] = useState({ menudeo: '', mayoreo: '', distribuidor: '', master: '' });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -46,6 +51,7 @@ export default function PreciosManager({ productId }) {
     setForm({
       menudeo: toInputValue(prices.menudeo),
       mayoreo: toInputValue(prices.mayoreo),
+      volumen: toInputValue(prices.volumen),
       distribuidor: toInputValue(prices.distribuidor),
       master: toInputValue(prices.master)
     });
@@ -88,9 +94,11 @@ export default function PreciosManager({ productId }) {
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-md px-3 py-2">{error}</div>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {TIPOS.map(({ key, label }) => (
+        {TIPOS.map(({ key, label, rango }) => (
           <div key={key}>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              {label}{rango && brandSlug === 'prezenza' && <span className="text-gray-400 font-normal"> · {rango}</span>}
+            </label>
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
               <input

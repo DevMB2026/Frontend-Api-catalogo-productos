@@ -301,7 +301,7 @@ export default function ProductBuilder() {
 
       {isEdit && product && (
         <Section title="Precios" desc="Privados — nunca se muestran en el catálogo público. Se guardan aparte del resto del formulario; dejar un campo vacío lo deja sin definir.">
-          <PreciosManager productId={id} />
+          <PreciosManager productId={id} brandSlug={product?.brand?.slug} />
         </Section>
       )}
 

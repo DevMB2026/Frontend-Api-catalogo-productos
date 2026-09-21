@@ -11,6 +11,7 @@ const btnGhost = 'px-4 py-2 rounded-md border border-gray-300 text-gray-700 text
 const TIPOS = [
   { key: 'menudeo', label: 'Menudeo' },
   { key: 'mayoreo', label: 'Mayoreo' },
+  { key: 'volumen', label: 'Volumen' },
   { key: 'distribuidor', label: 'Distribuidor' },
   { key: 'master', label: 'Master' }
 ];
