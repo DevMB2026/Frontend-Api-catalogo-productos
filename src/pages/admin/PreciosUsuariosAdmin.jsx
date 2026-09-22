@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  listPriceUsers, createPriceUser, updatePriceUser, resetPriceUserPassword
+  listPriceUsers, createPriceUser, updatePriceUser, resetPriceUserPassword,
+  generatePriceUserApiKey, revokePriceUserApiKey
 } from '../../api/adminPriceUser';
 
 const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
@@ -23,7 +24,7 @@ const TIPOS = [
 // abajo), y desaparece de memoria en cuanto se cierra el modal. El backend
 // tampoco la vuelve a devolver en ningún otro endpoint. Mismo patrón que la
 // API Key de distribuidor (ver RevealKeyModal en DistribuidoresAdmin.jsx).
-function RevealPasswordModal({ password, onClose }) {
+function RevealPasswordModal({ password, onClose, titulo = 'Contraseña generada', aviso = 'Copia esta contraseña ahora y entrégasela a la persona. No volverá a mostrarse.', extra = null }) {
   const [copiado, setCopiado] = useState(false);
   const copiar = async () => {
     try { await navigator.clipboard.writeText(password); setCopiado(true); } catch { /* clipboard no disponible */ }
@@ -32,14 +33,15 @@ function RevealPasswordModal({ password, onClose }) {
     <div className="fixed inset-0 bg-black/40 flex items-start justify-center p-4 z-30 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg my-8">
         <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-900">Contraseña generada</h3>
+          <h3 className="font-semibold text-gray-900">{titulo}</h3>
         </div>
         <div className="p-6 space-y-3">
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-            Copia esta contraseña ahora y entrégasela a la persona. No volverá a mostrarse.
+            {aviso}
           </p>
           <code className="block break-all bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm text-gray-900">{password}</code>
           <button type="button" onClick={copiar} className={btnGhost}>{copiado ? 'Copiada ✓' : 'Copiar'}</button>
+          {extra}
         </div>
         <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
           <button type="button" onClick={onClose} className={btnPrimary}>Cerrar</button>
@@ -130,6 +132,7 @@ export default function PreciosUsuariosAdmin() {
 
   const [modal, setModal] = useState(null); // { mode: 'create' | 'edit', row? }
   const [revealPassword, setRevealPassword] = useState(null);
+  const [revealKey, setRevealKey] = useState(null); // API Key recién generada (solo en memoria, igual que la contraseña)
   const [actionError, setActionError] = useState(null);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['usuarios-precios'] });
@@ -137,6 +140,8 @@ export default function PreciosUsuariosAdmin() {
   const createMut = useMutation({ mutationFn: createPriceUser, onSuccess: invalidate });
   const updateMut = useMutation({ mutationFn: ({ id, body }) => updatePriceUser(id, body), onSuccess: invalidate });
   const resetMut = useMutation({ mutationFn: resetPriceUserPassword, onSuccess: invalidate });
+  const keyMut = useMutation({ mutationFn: generatePriceUserApiKey, onSuccess: invalidate });
+  const revokeMut = useMutation({ mutationFn: revokePriceUserApiKey, onSuccess: invalidate });
 
   const handleFormSubmit = async (payload) => {
     if (modal.mode === 'create') {
@@ -161,6 +166,32 @@ export default function PreciosUsuariosAdmin() {
       setActionError(err.message);
     }
   };
+
+  const generarApiKey = async (row) => {
+    const msg = row.apiKey
+      ? `¿Generar una API Key nueva para "${row.nombre}"? La actual dejará de funcionar de inmediato.`
+      : `¿Generar una API Key para "${row.nombre}"? Con ella su sistema podrá consultar el catálogo con SKUs y los precios que tiene permitidos.`;
+    if (!confirm(msg)) return;
+    setActionError(null);
+    try {
+      const res = await keyMut.mutateAsync(row._id);
+      setRevealKey(res.data.apiKey);
+    } catch (err) {
+      setActionError(err.message);
+    }
+  };
+
+  const revocarApiKey = async (row) => {
+    if (!confirm(`¿Revocar la API Key de "${row.nombre}"? Su sistema dejará de recibir datos de inmediato.`)) return;
+    setActionError(null);
+    try {
+      await revokeMut.mutateAsync(row._id);
+    } catch (err) {
+      setActionError(err.message);
+    }
+  };
+
+  const fecha = (d) => (d ? new Date(d).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : 'nunca');
 
   return (
     <div>
@@ -189,6 +220,7 @@ export default function PreciosUsuariosAdmin() {
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
                 <th className="px-4 py-3 font-medium">Precios permitidos</th>
+                <th className="px-4 py-3 font-medium">API Key</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -209,6 +241,18 @@ export default function PreciosUsuariosAdmin() {
                           <span key={t.key} className="text-xs bg-indigo-50 text-indigo-700 rounded px-1.5 py-0.5">{t.label}</span>
                         ))}
                       </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-xs whitespace-nowrap">
+                    {row.apiKey ? (
+                      <div>
+                        <span className="font-mono text-gray-800">{row.apiKey.prefijo}</span>
+                        <p className="text-gray-400">Último uso: {fecha(row.apiKey.ultimoUso)}</p>
+                        <button onClick={() => generarApiKey(row)} className="text-indigo-600 hover:text-indigo-800 mr-3">Regenerar</button>
+                        <button onClick={() => revocarApiKey(row)} className="text-red-600 hover:text-red-800">Revocar</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => generarApiKey(row)} className="text-indigo-600 hover:text-indigo-800">Generar API Key</button>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap space-x-3">
@@ -234,6 +278,20 @@ export default function PreciosUsuariosAdmin() {
       )}
 
       {revealPassword && <RevealPasswordModal password={revealPassword} onClose={() => setRevealPassword(null)} />}
+      {revealKey && (
+        <RevealPasswordModal
+          password={revealKey}
+          onClose={() => setRevealKey(null)}
+          titulo="API Key generada"
+          aviso="Copia esta API Key ahora y entrégasela al cliente por un medio seguro. No volverá a mostrarse; si se pierde, genera una nueva."
+          extra={(
+            <p className="text-xs text-gray-500">
+              Uso: <code className="bg-gray-50 px-1">GET /api/v1/clientes/productos</code> con el header <code className="bg-gray-50 px-1">X-API-Key</code>.
+              Devuelve el catálogo con SKUs y solo los precios que este usuario tiene permitidos.
+            </p>
+          )}
+        />
+      )}
     </div>
   );
 }
