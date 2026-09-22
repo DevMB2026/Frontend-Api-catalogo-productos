@@ -36,7 +36,18 @@ function SkusCliente({ product, variantId }) {
     const ids = (v.optionValues || []).map(idOf);
     return (opt.values || []).find((x) => ids.includes(idOf(x)))?.valor || '';
   };
-  const variantes = product.variants || [];
+  // Orden fijo de la tabla: por color (el mismo orden que las ruedas de color
+  // de la ficha) y, dentro de cada color, por talla según su `orden` en la
+  // base (XCH, CH, M, G, XG, 2XG … 5XG) — nunca el orden en que se guardaron.
+  const posDe = (opt) => new Map((opt?.values || []).map((x, i) => [idOf(x), i]));
+  const ordenTalla = new Map((tallaOpt?.values || []).map((x, i) => [idOf(x), x.orden ?? i]));
+  const posColor = posDe(colorOpt);
+  const claveDe = (v, mapa) => {
+    const id = (v.optionValues || []).map(idOf).find((x) => mapa.has(x));
+    return id === undefined ? Number.MAX_SAFE_INTEGER : mapa.get(id);
+  };
+  const variantes = [...(product.variants || [])].sort((a, b) =>
+    claveDe(a, posColor) - claveDe(b, posColor) || claveDe(a, ordenTalla) - claveDe(b, ordenTalla));
   const actual = variantes.find((v) => v._id === variantId);
 
   return (

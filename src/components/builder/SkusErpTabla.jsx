@@ -54,11 +54,17 @@ export default function SkusErpTabla({ productId, product, colorOptionId, highli
       const talla = vals.find((o) => o !== color);
       return { v, color, talla };
     });
+    // Mismo orden que la ficha: color según el orden del producto (sus ruedas
+    // de color) y, dentro de cada color, talla según su `orden` (XCH … 5XG).
+    const colorVals = (product?.options || []).find((o) => idOf(o.option) === colorOptionId)?.values || [];
+    const posColor = new Map(colorVals.map((x, i) => [idOf(x), i]));
+    const pc = (c) => (c && posColor.has(idOf(c)) ? posColor.get(idOf(c)) : Number.MAX_SAFE_INTEGER);
     return list.sort((a, b) =>
+      pc(a.color) - pc(b.color) ||
       (a.color?.valor || '').localeCompare(b.color?.valor || '', 'es') ||
       (a.talla?.orden ?? 0) - (b.talla?.orden ?? 0) ||
       (a.talla?.valor || '').localeCompare(b.talla?.valor || '', 'es'));
-  }, [variants, colorOptionId]);
+  }, [variants, colorOptionId, product]);
 
   const erpOf = (v) => (editing ? draft[v._id] || [] : v.skusErp || []);
   const total = rows.length;
