@@ -11,6 +11,14 @@ import { useAuth } from '../context/AuthContext';
 // debe entrar al panel — el panel es para admin (y, sin cambiar su
 // comportamiento actual, distribuidor). pricePermissions NUNCA decide esto;
 // la única fuente de verdad aquí es el role.
+// Pantallas públicas que no son para clientes (role usuario): acceso de
+// distribuidor y login del panel. Un cliente con sesión vuelve al catálogo.
+export function SoloNoClientes({ children }) {
+  const { user } = useAuth();
+  if (user?.role === 'usuario') return <Navigate to="/" replace />;
+  return children;
+}
+
 export default function ProtectedRoute({ children }) {
   const { isAuth, user } = useAuth();
   if (!isAuth) return <Navigate to="/login" replace />;

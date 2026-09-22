@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Layout from './components/Layout';
 import PublicLayout from './components/PublicLayout';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute, { SoloNoClientes } from './components/ProtectedRoute';
 import ProductsList from './pages/ProductsList';
 import ProductBuilder from './pages/ProductBuilder';
 import Catalogo from './pages/Catalogo';
@@ -30,11 +30,11 @@ export default function App() {
       <Route path="/" element={<PublicLayout />}>
         <Route index element={<Catalogo />} />
         <Route path="producto/:slug" element={<ProductoDetalle />} />
-        <Route path="distribuidor" element={<DistributorAccess />} />
+        <Route path="distribuidor" element={<SoloNoClientes><DistributorAccess /></SoloNoClientes>} />
       </Route>
 
       {/* Autenticación */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<SoloNoClientes><Login /></SoloNoClientes>} />
       <Route path="/clientes" element={<Login modo="clientes" />} />
 
       {/* Admin (protegido) */}

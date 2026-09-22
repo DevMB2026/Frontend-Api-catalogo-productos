@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { login as apiLogin } from '../api/auth';
 
@@ -11,6 +11,22 @@ export function AuthProvider({ children }) {
     const raw = localStorage.getItem('user');
     return raw ? JSON.parse(raw) : null;
   });
+
+  // La sesión vive en localStorage, compartida por TODAS las pestañas. Si en
+  // otra pestaña se inicia o cierra sesión (p. ej. un cliente en /clientes),
+  // esta pestaña se actualiza: así el panel admin nunca sigue abierto
+  // mostrando una cuenta mientras las peticiones ya van con otra.
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== null && e.key !== 'token' && e.key !== 'user') return;
+      qc.removeQueries({ queryKey: ['mis-precios'] });
+      setToken(localStorage.getItem('token'));
+      const raw = localStorage.getItem('user');
+      setUser(raw ? JSON.parse(raw) : null);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [qc]);
 
   async function login(email, password) {
     const res = await apiLogin(email, password);

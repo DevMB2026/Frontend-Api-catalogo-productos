@@ -275,7 +275,7 @@ export default function ProductoDetalle() {
           )}
 
           {/* Precios: solo con sesión iniciada y permisos (el backend decide qué niveles) */}
-          <MisPrecios productId={p._id} brandSlug={p.brand?.slug} />
+          <MisPrecios productId={p._id} brandSlug={p.brand?.slug} product={p} variantId={variant?._id} />
 
           {/* Aplicaciones */}
           {p.applications?.length > 0 && (

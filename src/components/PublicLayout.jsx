@@ -10,8 +10,13 @@ export default function PublicLayout() {
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="font-bold text-lg text-gray-900">Catálogo</Link>
           <div className="flex items-center gap-4">
-            <Link to="/distribuidor" className="text-sm text-gray-500 hover:text-gray-900">Acceso distribuidor</Link>
-            {user?.role !== 'usuario' && <Link to="/admin" className="text-sm text-gray-500 hover:text-gray-900">Admin</Link>}
+            {/* Un cliente (role usuario) solo ve el catálogo: sin enlaces a distribuidor ni admin. */}
+            {user?.role !== 'usuario' && (
+              <>
+                <Link to="/distribuidor" className="text-sm text-gray-500 hover:text-gray-900">Acceso distribuidor</Link>
+                <Link to="/admin" className="text-sm text-gray-500 hover:text-gray-900">Admin</Link>
+              </>
+            )}
             {isAuth ? (
               <span className="flex items-center gap-3 text-sm">
                 {user?.nombre && <span className="hidden sm:inline text-gray-700">Hola, {user.nombre}</span>}
