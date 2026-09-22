@@ -35,6 +35,7 @@ export default function App() {
 
       {/* Autenticación */}
       <Route path="/login" element={<Login />} />
+      <Route path="/clientes" element={<Login modo="clientes" />} />
 
       {/* Admin (protegido) */}
       <Route

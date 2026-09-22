@@ -1,9 +1,11 @@
 import { createContext, useContext, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { login as apiLogin } from '../api/auth';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const qc = useQueryClient();
   const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem('user');
@@ -21,6 +23,8 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    // Los precios consultados con esta sesión no deben quedar en memoria.
+    qc.removeQueries({ queryKey: ['mis-precios'] });
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);

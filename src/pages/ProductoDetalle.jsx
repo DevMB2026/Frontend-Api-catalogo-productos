@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getProductBySlug } from '../api/catalog';
 import { swatchBg } from '../lib/colors';
+import MisPrecios from '../components/MisPrecios';
 
 const idOf = (x) => (x && x._id) ? x._id : x;
 
@@ -272,6 +273,9 @@ export default function ProductoDetalle() {
               </p>
             </div>
           )}
+
+          {/* Precios: solo con sesión iniciada y permisos (el backend decide qué niveles) */}
+          <MisPrecios productId={p._id} brandSlug={p.brand?.slug} />
 
           {/* Aplicaciones */}
           {p.applications?.length > 0 && (

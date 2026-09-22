@@ -1,37 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getProductPrices, updateProductPrices } from '../../api/adminPrice';
+import { TIPOS, reglasPrecio } from '../../lib/preciosReglas';
 
 const inputCls = 'w-full border border-gray-300 rounded-md pl-6 pr-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
 
-// Menudeo, mayoreo y volumen son por cantidad; distribuidor y master son
-// precios especiales (no dependen de la cantidad). Cada marca define sus
-// rangos y qué niveles usa; una marca que no esté aquí muestra los 5 niveles
-// sin rango. `ocultos` no se muestran ni se envían al guardar (no se tocan).
-const TIPOS = [
-  { key: 'menudeo', label: 'Menudeo' },
-  { key: 'mayoreo', label: 'Mayoreo' },
-  { key: 'volumen', label: 'Volumen' },
-  { key: 'distribuidor', label: 'Distribuidor' },
-  { key: 'master', label: 'Master' }
-];
-const REGLAS_BE_FRESH = {
-  rangos: { menudeo: '1–11 pzas', mayoreo: '12 pzas o más', master: 'precio especial' },
-  ocultos: ['volumen', 'distribuidor'] // volumen (201+) es solo de Prezenza; distribuidor no aplica en Be Fresh ni Security
-};
-const REGLAS_CINCO_NIVELES = {
-  rangos: { menudeo: '1–30 pzas', mayoreo: '31–200 pzas', volumen: '201 pzas o más', distribuidor: 'precio especial', master: 'precio especial' },
-  ocultos: []
-};
-const REGLAS_POR_MARCA = {
-  prezenza: REGLAS_CINCO_NIVELES,
-  fitbefresh: REGLAS_BE_FRESH,
-  befreshsecurity: REGLAS_BE_FRESH
-};
-// Excepciones puntuales a la regla de su marca (por _id de producto).
-const REGLAS_POR_PRODUCTO = {
-  '6a7decbc3d905ef7b12aaa27': REGLAS_CINCO_NIVELES // Camisa Pescadora (Fit Be Fresh): maneja los 5 niveles
-};
 const EMPTY_FORM = { menudeo: '', mayoreo: '', volumen: '', distribuidor: '', master: '' };
 
 const toInputValue = (v) => (v === null || v === undefined ? '' : String(v));
@@ -45,7 +18,7 @@ const toInputValue = (v) => (v === null || v === undefined ? '' : String(v));
 // esta pantalla solo maneja los 5 precios a nivel producto.
 export default function PreciosManager({ productId, brandSlug }) {
   const qc = useQueryClient();
-  const reglas = REGLAS_POR_PRODUCTO[productId] || REGLAS_POR_MARCA[brandSlug] || { rangos: {}, ocultos: [] };
+  const reglas = reglasPrecio(productId, brandSlug);
   const visibles = TIPOS.filter(({ key }) => !reglas.ocultos.includes(key));
   const { data, isLoading } = useQuery({
     queryKey: ['product-prices', productId],

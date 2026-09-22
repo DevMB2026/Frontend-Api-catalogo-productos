@@ -1,10 +1,23 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export default function Login() {
+// Solo rutas internas (evita redirigir a otro sitio con ?next=//dominio o https://…).
+const safeNext = (n) => (n && n.startsWith('/') && !n.startsWith('//') ? n : null);
+
+const TEXTOS = {
+  admin: { titulo: 'Panel de administración', subtitulo: 'Inicia sesión para gestionar el catálogo' },
+  clientes: { titulo: 'Acceso clientes', subtitulo: 'Inicia sesión para ver tus precios' }
+};
+
+// Mismo login (mismo endpoint y JWT) para /login (admin) y /clientes (personas
+// con acceso a precios); solo cambian los textos y a dónde se va al entrar.
+// Qué precios ve cada quien lo decide el backend (pricePermissions).
+export default function Login({ modo = 'admin' }) {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const textos = TEXTOS[modo] || TEXTOS.admin;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -19,8 +32,10 @@ export default function Login() {
       // se ignoraba y siempre se navegaba a /admin. Un role:'usuario' no
       // tiene panel administrativo todavía, así que lo mandamos al catálogo
       // en vez de dejar que ProtectedRoute lo rebote justo después.
+      // En /clientes siempre se vuelve al catálogo (o a la ficha de donde venía).
       const user = await login(email, password);
-      navigate(user.role === 'usuario' ? '/' : '/admin');
+      if (modo === 'clientes') navigate(safeNext(searchParams.get('next')) || '/');
+      else navigate(user.role === 'usuario' ? '/' : '/admin');
     } catch (err) {
       setError(err.message || 'No se pudo iniciar sesión');
     } finally {
@@ -32,8 +47,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <form onSubmit={onSubmit} className="w-full max-w-sm bg-white rounded-xl shadow p-8 space-y-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Panel de administración</h1>
-          <p className="text-sm text-gray-500 mt-1">Inicia sesión para gestionar el catálogo</p>
+          <h1 className="text-2xl font-bold text-gray-900">{textos.titulo}</h1>
+          <p className="text-sm text-gray-500 mt-1">{textos.subtitulo}</p>
         </div>
 
         {error && (
