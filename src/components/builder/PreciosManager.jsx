@@ -19,13 +19,18 @@ const REGLAS_BE_FRESH = {
   rangos: { menudeo: '1–11 pzas', mayoreo: '12 pzas o más', master: 'precio especial' },
   ocultos: ['volumen', 'distribuidor'] // volumen (201+) es solo de Prezenza; distribuidor no aplica en Be Fresh ni Security
 };
+const REGLAS_CINCO_NIVELES = {
+  rangos: { menudeo: '1–30 pzas', mayoreo: '31–200 pzas', volumen: '201 pzas o más', distribuidor: 'precio especial', master: 'precio especial' },
+  ocultos: []
+};
 const REGLAS_POR_MARCA = {
-  prezenza: {
-    rangos: { menudeo: '1–30 pzas', mayoreo: '31–200 pzas', volumen: '201 pzas o más', distribuidor: 'precio especial', master: 'precio especial' },
-    ocultos: []
-  },
+  prezenza: REGLAS_CINCO_NIVELES,
   fitbefresh: REGLAS_BE_FRESH,
   befreshsecurity: REGLAS_BE_FRESH
+};
+// Excepciones puntuales a la regla de su marca (por _id de producto).
+const REGLAS_POR_PRODUCTO = {
+  '6a7decbc3d905ef7b12aaa27': REGLAS_CINCO_NIVELES // Camisa Pescadora (Fit Be Fresh): maneja los 5 niveles
 };
 const EMPTY_FORM = { menudeo: '', mayoreo: '', volumen: '', distribuidor: '', master: '' };
 
@@ -40,7 +45,7 @@ const toInputValue = (v) => (v === null || v === undefined ? '' : String(v));
 // esta pantalla solo maneja los 5 precios a nivel producto.
 export default function PreciosManager({ productId, brandSlug }) {
   const qc = useQueryClient();
-  const reglas = REGLAS_POR_MARCA[brandSlug] || { rangos: {}, ocultos: [] };
+  const reglas = REGLAS_POR_PRODUCTO[productId] || REGLAS_POR_MARCA[brandSlug] || { rangos: {}, ocultos: [] };
   const visibles = TIPOS.filter(({ key }) => !reglas.ocultos.includes(key));
   const { data, isLoading } = useQuery({
     queryKey: ['product-prices', productId],
