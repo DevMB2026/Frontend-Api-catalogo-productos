@@ -68,7 +68,7 @@ export default function ProductsList() {
       <form onSubmit={buscarSku} className="mb-4 flex flex-wrap items-center gap-2">
         <input
           value={skuQ} onChange={(e) => { setSkuQ(e.target.value); setSkuMsg(null); }}
-          placeholder="Buscar por SKU del ERP (ej. CHMPPRZM70CLNYPMARXX)"
+          placeholder="Buscar por SKU (ej. CHMPPRZM70CLNYPMARXX)"
           className="w-full sm:w-96 border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <button type="submit" disabled={skuBusy || !skuQ.trim()}
@@ -90,7 +90,7 @@ export default function ProductsList() {
                 <th className="px-4 py-3 font-medium">Marca</th>
                 <th className="px-4 py-3 font-medium">Categoría</th>
                 <th className="px-4 py-3 font-medium">Variantes</th>
-                <th className="px-4 py-3 font-medium">SKUs ERP</th>
+                <th className="px-4 py-3 font-medium">SKUs</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -107,7 +107,7 @@ export default function ProductsList() {
                     {(() => {
                       const st = erpStats(p);
                       return st.skus === 0 ? <span className="text-gray-300">—</span>
-                        : <span title={`${st.skus} SKUs del ERP en ${st.conErp} de ${st.total} variantes`}>{st.skus} <span className="text-xs text-gray-400">({st.conErp}/{st.total} var.)</span></span>;
+                        : <span title={`${st.skus} SKUs en ${st.conErp} de ${st.total} variantes`}>{st.skus} <span className="text-xs text-gray-400">({st.conErp}/{st.total} var.)</span></span>;
                     })()}
                   </td>
                   <td className="px-4 py-3">

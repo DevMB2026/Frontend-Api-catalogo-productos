@@ -49,11 +49,11 @@ export default function SkusErpTabla({ product, colorOptionId, highlightSku }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        <span className="font-medium text-gray-900">{totalSkus} SKUs del ERP</span>
+        <span className="font-medium text-gray-900">{totalSkus} SKUs</span>
         <span className="text-gray-500">en {conErp} de {total} variantes</span>
         {conErp < total && (
           <span className="text-xs bg-amber-50 text-amber-700 rounded px-2 py-1">
-            {total - conErp} variante{total - conErp === 1 ? '' : 's'} sin SKU del ERP (no vienen en el archivo del ERP)
+            {total - conErp} variante{total - conErp === 1 ? '' : 's'} sin SKU
           </span>
         )}
         <input
@@ -69,8 +69,8 @@ export default function SkusErpTabla({ product, colorOptionId, highlightSku }) {
             <tr>
               <th className="px-3 py-2 font-medium">Color</th>
               <th className="px-3 py-2 font-medium">Talla</th>
-              <th className="px-3 py-2 font-medium">SKU de la variante</th>
-              <th className="px-3 py-2 font-medium">SKU(s) del ERP</th>
+              <th className="px-3 py-2 font-medium">SKU interno</th>
+              <th className="px-3 py-2 font-medium">SKU(s)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

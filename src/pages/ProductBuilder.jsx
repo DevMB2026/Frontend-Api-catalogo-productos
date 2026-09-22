@@ -294,7 +294,7 @@ export default function ProductBuilder() {
       )}
 
       {isEdit && product && (
-        <Section title="SKUs del ERP" desc="Código del ERP de cada variante color+talla (uno por género en productos dama+caballero). Solo consulta: se cargan con el script de importación.">
+        <Section title="SKUs" desc="SKUs de cada variante color+talla (uno por género en productos dama+caballero). Solo consulta.">
           <SkusErpTabla product={product} colorOptionId={colorOptionId} highlightSku={highlightSku} />
         </Section>
       )}
