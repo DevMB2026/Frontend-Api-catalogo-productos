@@ -294,8 +294,8 @@ export default function ProductBuilder() {
       )}
 
       {isEdit && product && (
-        <Section title="SKUs" desc="SKUs de cada variante color+talla (uno por género en productos dama+caballero). Solo consulta.">
-          <SkusErpTabla product={product} colorOptionId={colorOptionId} highlightSku={highlightSku} />
+        <Section title="SKUs" desc="SKUs de cada variante color+talla (uno por género en productos dama+caballero). Se guardan con su propio botón, aparte del resto del formulario.">
+          <SkusErpTabla productId={id} product={product} colorOptionId={colorOptionId} highlightSku={highlightSku} onChanged={refetchProduct} />
         </Section>
       )}
 
