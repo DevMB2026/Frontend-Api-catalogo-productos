@@ -9,7 +9,7 @@ const chip = 'inline-flex items-center gap-1.5 text-sm font-medium bg-indigo-50 
 const parseSizes = (text) => text.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
 
 // Editor de una lista de chips de talla (base o por color).
-function SizeChips({ sizes, onChange, placeholder }) {
+function SizeChips({ sizes, onChange, placeholder, confirmarQuitar }) {
   const [text, setText] = useState('');
   const add = (labels) => {
     const existing = new Set(sizes.map((s) => s.label.toLowerCase()));
@@ -30,7 +30,7 @@ function SizeChips({ sizes, onChange, placeholder }) {
         {sizes.map((s, i) => (
           <span key={s.valueId || s.label} className={chip}>
             {s.label}
-            <button type="button" onClick={() => onChange(sizes.filter((_, idx) => idx !== i))} aria-label={`Quitar ${s.label}`}
+            <button type="button" onClick={() => { if (confirmarQuitar && !confirmarQuitar(s)) return; onChange(sizes.filter((_, idx) => idx !== i)); }} aria-label={`Quitar ${s.label}`}
               className="flex h-5 w-5 items-center justify-center rounded text-indigo-400 hover:bg-indigo-100 hover:text-indigo-700">×</button>
           </span>
         ))}
@@ -41,7 +41,7 @@ function SizeChips({ sizes, onChange, placeholder }) {
   );
 }
 
-export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption, valuesByOption }) {
+export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption, valuesByOption, confirmarQuitarColor, confirmarQuitarTalla }) {
   const set = (patch) => onChange({ ...sc, ...patch });
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
@@ -73,7 +73,10 @@ export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption,
   const addColorFromValue = (v) => { if (!usedColorIds.has(v._id)) set({ colors: [...sc.colors, { label: v.valor, hex: v.meta?.hex, valueId: v._id, override: false, sizes: [] }] }); };
   const addColorLabel = (label, hex) => { const l = label.trim(); if (l && !usedColorLabels.has(l.toLowerCase())) set({ colors: [...sc.colors, { label: l, hex, override: false, sizes: [] }] }); };
   const updateColor = (i, patch) => set({ colors: sc.colors.map((c, idx) => (idx === i ? { ...c, ...patch } : c)) });
-  const removeColor = (i) => set({ colors: sc.colors.filter((_, idx) => idx !== i) });
+  const removeColor = (i) => {
+    if (confirmarQuitarColor && !confirmarQuitarColor(sc.colors[i])) return;
+    set({ colors: sc.colors.filter((_, idx) => idx !== i) });
+  };
 
   const combos = countCombos(sc);
 
@@ -96,6 +99,7 @@ export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption,
         </div>
         <p className="mb-3 text-xs text-gray-500">Aplican a todos los colores. Escribe una talla y Enter, o pega varias separadas por coma (ej. CH, M, G, XG).</p>
         <SizeChips
+          confirmarQuitar={confirmarQuitarTalla}
           sizes={sc.baseSizes}
           onChange={(sizes) => set({ sizeOptionId: sizeOptionIdFor(), baseSizes: sizes })}
         />
@@ -129,6 +133,7 @@ export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption,
               {c.override && (
                 <div className="mt-3">
                   <SizeChips
+                    confirmarQuitar={confirmarQuitarTalla}
                     sizes={c.sizes}
                     onChange={(sizes) => set({
                       sizeOptionId: sizeOptionIdFor(),

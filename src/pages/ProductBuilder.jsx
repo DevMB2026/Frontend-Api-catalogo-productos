@@ -205,6 +205,91 @@ export default function ProductBuilder() {
     navigate('/admin');
   };
 
+  // ---- Tallas y colores se guardan SOLOS al editar ----
+  // Así un color recién agregado aparece enseguida en Imágenes (para subirle
+  // fotos) y en SKUs, sin tener que presionar "Guardar cambios" primero: la
+  // API solo deja subir fotos a colores que ya están guardados en el producto.
+  const scRef = useRef(sc);
+  scRef.current = sc;
+  const scGuardado = useRef(null); // JSON del último sc guardado
+  const guardandoSc = useRef(false);
+  const [scEstado, setScEstado] = useState(''); // '' | 'pendiente' | 'guardando' | 'guardado' | 'error'
+  const [scError, setScError] = useState(null);
+
+  // Pasa a `actual` los ids que la API creó para colores/tallas nuevos (por
+  // nombre), para no volver a crearlos en el siguiente guardado.
+  const conIds = (actual, guardado) => {
+    const idColor = new Map(guardado.colors.map((c) => [c.label.toLowerCase(), c.valueId]));
+    const idTalla = new Map([...guardado.baseSizes, ...guardado.colors.flatMap((c) => c.sizes)].map((s) => [s.label.toLowerCase(), s.valueId]));
+    const talla = (s) => (s.valueId ? s : { ...s, valueId: idTalla.get(s.label.toLowerCase()) });
+    return {
+      ...actual,
+      sizeOptionId: actual.sizeOptionId || guardado.sizeOptionId,
+      baseSizes: actual.baseSizes.map(talla),
+      colors: actual.colors.map((c) => ({ ...(c.valueId ? c : { ...c, valueId: idColor.get(c.label.toLowerCase()) }), sizes: c.sizes.map(talla) })),
+    };
+  };
+
+  async function guardarSc() {
+    if (guardandoSc.current) { setTimeout(guardarSc, 400); return; }
+    const antes = scRef.current;
+    const antesTxt = JSON.stringify(antes);
+    if (antesTxt === scGuardado.current) { setScEstado('guardado'); return; }
+    guardandoSc.current = true;
+    setScEstado('guardando'); setScError(null);
+    try {
+      const { options, variants } = await scToPayload(antes, form.sku, colorOptionId, createValue, product?.variants || []);
+      await updateProduct(id, { options, variants });
+      const r = await refetchProduct();
+      const nuevo = r.data?.data ? scFromProduct(r.data.data, colorOptionId) : antes;
+      scGuardado.current = JSON.stringify(nuevo);
+      // Si no cambió nada mientras se guardaba, se usa lo guardado tal cual;
+      // si sí, se conservan esos cambios (con los ids nuevos) y se guardan después.
+      const siguiente = JSON.stringify(scRef.current) === antesTxt ? nuevo : conIds(scRef.current, nuevo);
+      setSc(siguiente);
+      // Lo guardado ya no cuenta como "cambios sin guardar".
+      if (inicial.current) { const base = JSON.parse(inicial.current); base.sc = nuevo; inicial.current = JSON.stringify(base); }
+      setScEstado('guardado');
+    } catch (err) {
+      scGuardado.current = antesTxt; // no reintentar en bucle; se reintenta al siguiente cambio
+      setScEstado('error');
+      setScError(err.message || 'No se pudo guardar');
+    } finally {
+      guardandoSc.current = false;
+    }
+  }
+
+  useEffect(() => {
+    if (!isEdit || !scPrefilled || !colorOptionId || !inicial.current) return undefined;
+    const actual = JSON.stringify(sc);
+    if (scGuardado.current === null) scGuardado.current = JSON.stringify(JSON.parse(inicial.current).sc);
+    if (actual === scGuardado.current) return undefined;
+    setScEstado('pendiente');
+    const t = setTimeout(guardarSc, 900);
+    return () => clearTimeout(t);
+  }, [sc, isEdit, scPrefilled, colorOptionId, inicial.current]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Quitar un color o una talla que ya tiene variantes borra esas variantes
+  // (con sus SKUs) al instante: se pide confirmación.
+  const confirmarQuitarColor = (c) => {
+    if (!isEdit || !c.valueId) return true;
+    const vs = variantes.filter((v) => (v.optionValues || []).some((ov) => idOf(ov) === c.valueId));
+    const skus = vs.reduce((t, v) => t + (v.skusErp || []).length, 0);
+    const fotos = (product?.media || []).filter((m) => idOf(m.optionValue) === c.valueId).length;
+    if (!vs.length && !fotos) return true;
+    return window.confirm(
+      `¿Quitar el color ${c.label}?\n\nSe borran sus ${vs.length} variantes${skus ? ` y ${skus} SKUs` : ''}${fotos ? ` (tiene ${fotos} fotos)` : ''}. Se guarda al instante.\n\n` +
+      'Si solo quieres que no se vea en el catálogo, usa "Colores visibles en el catálogo".'
+    );
+  };
+  const confirmarQuitarTalla = (s) => {
+    if (!isEdit || !s.valueId) return true;
+    const vs = variantes.filter((v) => (v.optionValues || []).some((ov) => idOf(ov) === s.valueId));
+    const skus = vs.reduce((t, v) => t + (v.skusErp || []).length, 0);
+    if (!vs.length) return true;
+    return window.confirm(`¿Quitar la talla ${s.label}?\n\nSe borran ${vs.length} variantes${skus ? ` y ${skus} SKUs` : ''}. Se guarda al instante.`);
+  };
+
   // ---- Estado de cada sección para el índice (verde = completo, ámbar = falta algo) ----
   const categoriaSel = categories.find((c) => c._id === form.category);
   const sinCategoria = !form.category || /sin[- ]categor/i.test(categoriaSel?.slug || categoriaSel?.nombre || '');
@@ -367,9 +452,22 @@ export default function ProductBuilder() {
             </div>
           </Section>
 
-          <Section id="sec-tallas" n={num()} title="Tallas y colores" desc="Las tallas aplican a todos los colores; las variantes (color × talla) se generan solas al guardar."
+          <Section id="sec-tallas" n={num()} instant={isEdit} title="Tallas y colores"
+            desc={isEdit
+              ? 'Se guarda sola al agregar o quitar: un color nuevo aparece enseguida en Imágenes (para subirle fotos) y en SKUs.'
+              : 'Las tallas aplican a todos los colores; las variantes (color × talla) se generan solas al crear el producto.'}
             status={!sc.colors.length || !nTallas ? 'warn' : 'ok'} statusText={!sc.colors.length ? 'Sin colores' : (!nTallas ? 'Sin tallas' : '')}>
-            <SizesAndColors sc={sc} onChange={setSc} sizeOptions={sizeOptions} colorOption={colorOption} valuesByOption={valuesByOption} />
+            {isEdit && scEstado && (
+              <div className={`mb-4 flex items-center gap-2 rounded-lg px-3 py-2 text-sm ring-1 ${scEstado === 'error' ? 'bg-red-50 text-red-700 ring-red-200' : scEstado === 'guardado' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-sky-50 text-sky-700 ring-sky-200'}`}>
+                {(scEstado === 'pendiente' || scEstado === 'guardando') && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-sky-200 border-t-sky-600" />}
+                {scEstado === 'pendiente' && 'Guardando cambios de tallas y colores…'}
+                {scEstado === 'guardando' && 'Guardando cambios de tallas y colores…'}
+                {scEstado === 'guardado' && <>✓ Guardado. Los colores ya están disponibles en <a href="#sec-imagenes" className="font-medium underline">Imágenes</a> y <a href="#sec-skus" className="font-medium underline">SKUs</a>.</>}
+                {scEstado === 'error' && <>No se pudo guardar: {scError}. Vuelve a intentar con otro cambio o con "Guardar cambios".</>}
+              </div>
+            )}
+            <SizesAndColors sc={sc} onChange={setSc} sizeOptions={sizeOptions} colorOption={colorOption} valuesByOption={valuesByOption}
+              confirmarQuitarColor={confirmarQuitarColor} confirmarQuitarTalla={confirmarQuitarTalla} />
           </Section>
 
           {isEdit && product && (
