@@ -5,6 +5,18 @@ export const listProducts = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return apiFetch(`/products${qs ? '?' + qs : ''}`);
 };
+// Para la lista del panel: TODOS los productos (activos e inactivos), con sus
+// colores ocultos incluidos (conteos reales de variantes). La API da máximo
+// 100 por página, así que se piden las páginas necesarias.
+export async function listAllProductsAdmin() {
+  const todos = [];
+  for (let page = 1; ; page += 1) {
+    const r = await apiFetch(`/products?activo=all&incluirOcultos=true&limit=100&page=${page}&sort=-createdAt`, { auth: true }); // eslint-disable-line no-await-in-loop
+    todos.push(...(r.data || []));
+    if (!r.pagination || page >= r.pagination.totalPages) break;
+  }
+  return todos;
+}
 export const getProduct = (id) => apiFetch(`/products/${id}`);
 // Para el editor del panel: el producto COMPLETO, incluidos los colores ocultos
 // al público (Product.valoresOcultos). Sin esto, al guardar se perderían.
