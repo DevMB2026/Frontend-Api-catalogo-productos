@@ -12,6 +12,7 @@ import MediaManager from '../components/builder/MediaManager';
 import VariantesManager from '../components/builder/VariantesManager';
 import SkusErpTabla from '../components/builder/SkusErpTabla';
 import PreciosManager from '../components/builder/PreciosManager';
+import ColoresOcultos from '../components/builder/ColoresOcultos';
 
 const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
 const SEXO_OPTS = [{ value: 'hombre', label: 'Hombre' }, { value: 'mujer', label: 'Mujer' }, { value: 'unisex', label: 'Unisex / niños' }];
@@ -280,6 +281,12 @@ export default function ProductBuilder() {
       <Section title="Tallas y colores" desc="Define las tallas base (aplican a todos los colores) y los colores. Las variantes se generan solas.">
         <SizesAndColors sc={sc} onChange={setSc} sizeOptions={sizeOptions} colorOption={colorOption} valuesByOption={valuesByOption} />
       </Section>
+
+      {isEdit && product && (
+        <Section title="Colores visibles en el catálogo" desc="Clic en un color para ocultarlo o volver a mostrarlo. Oculto = no aparece en WordPress, distribuidores ni clientes, pero NO se borra (variantes, SKUs, precios y fotos se conservan). Se guarda al instante.">
+          <ColoresOcultos productId={id} product={product} colorOptionId={colorOptionId} onChanged={refetchProduct} />
+        </Section>
+      )}
 
       {isEdit && product && (
         <Section title="Imágenes" desc="Galería del producto y por variante (se guardan al instante).">
