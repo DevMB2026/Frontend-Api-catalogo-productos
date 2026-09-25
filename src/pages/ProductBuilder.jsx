@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { listBrands, listCategories, createProduct, updateProduct, getProduct } from '../api/catalog';
+import { listBrands, listCategories, createProduct, updateProduct, getProductAdmin } from '../api/catalog';
 import { optionsApi, optionValuesApi, featuresApi, applicationsApi, badgesApi, sizeChartsApi, getAttributeSchema } from '../api/pim';
 import { scFromProduct, scToPayload } from '../lib/variantModel';
 import DynamicAttributeForm from '../components/builder/DynamicAttributeForm';
@@ -69,7 +69,7 @@ export default function ProductBuilder() {
   const colorOptionId = colorOption?._id;
   const sizeOptions = options.filter((o) => o.tipo === 'size');
 
-  const { data: productData, refetch: refetchProduct } = useQuery({ queryKey: ['product', id], queryFn: () => getProduct(id), enabled: isEdit });
+  const { data: productData, refetch: refetchProduct } = useQuery({ queryKey: ['product-admin', id], queryFn: () => getProductAdmin(id), enabled: isEdit });
   const product = productData?.data;
 
   const [form, setForm] = useState({ nombre: '', sku: '', skuHombre: '', skuMujer: '', descripcion: '', sexo: ['unisex'], brand: '', category: '', destacado: false });

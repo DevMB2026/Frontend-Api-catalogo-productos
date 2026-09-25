@@ -6,6 +6,9 @@ export const listProducts = (params = {}) => {
   return apiFetch(`/products${qs ? '?' + qs : ''}`);
 };
 export const getProduct = (id) => apiFetch(`/products/${id}`);
+// Para el editor del panel: el producto COMPLETO, incluidos los colores ocultos
+// al público (Product.valoresOcultos). Sin esto, al guardar se perderían.
+export const getProductAdmin = (id) => apiFetch(`/products/${id}?incluirOcultos=true`, { auth: true });
 export const getProductBySlug = (slug) => apiFetch(`/products/slug/${slug}`);
 // Busca por SKU del producto, alias, SKU dama/caballero o SKU del ERP de una variante.
 // Devuelve { data: producto, matchedVariant? } y 404 si no existe.
