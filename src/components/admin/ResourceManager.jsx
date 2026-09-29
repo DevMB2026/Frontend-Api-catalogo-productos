@@ -48,6 +48,30 @@ function FieldControl({ field, value, onChange, form, error }) {
     case 'tags':
       control = <input {...common} value={Array.isArray(value) ? value.join(', ') : (value ?? '')} placeholder={field.placeholder || 'coma, separado'} />;
       break;
+    case 'color': {
+      // Selector nativo (rueda/paleta del sistema) + campo hex editable a mano.
+      // El picker solo acepta #rrggbb; mientras el texto no lo sea, muestra el
+      // color de respaldo (field.fallback) para no saltar a negro.
+      const valid = /^#[0-9a-fA-F]{6}$/.test(value || '');
+      const fallback = (field.fallback && field.fallback(form)) || '#cccccc';
+      control = (
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={valid ? value.toLowerCase() : fallback}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-10 w-14 cursor-pointer rounded border border-gray-300 bg-white p-1"
+          />
+          <input {...common} placeholder={field.placeholder} className={`${inputCls} font-mono`} />
+          {value && (
+            <button type="button" onClick={() => onChange('')} className="text-sm text-gray-500 hover:text-gray-800 whitespace-nowrap">
+              Quitar
+            </button>
+          )}
+        </div>
+      );
+      break;
+    }
     default:
       control = <input {...common} placeholder={field.placeholder} />;
   }

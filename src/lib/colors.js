@@ -21,6 +21,7 @@ const HEX = {
   'BUGANBILIA': '#c026a3', 'BUGANBILIA NEON': '#e5308f',
   'MENTA': '#7de3b3', 'TURQUESA': '#06b6d4', 'AQUA': '#22d3ee', 'PETROLEO': '#0e5a6b',
   'VINO': '#6b1220', 'GUINDA': '#7a1f2b', 'CAFE': '#5a3620', 'MARRON': '#5a3620', 'CHOCOLATE': '#4a2c1a',
+  'CAQUI': '#c3a878', 'KAKI': '#c3a878', 'KHAKI': '#c3a878',
   'BEIGE': '#e7d3a1', 'ARENA': '#dcc7a0', 'PAJA': '#e6d8a8', 'STONE': '#a8a29e', 'HUESO': '#efe9dd',
   'ORO': '#c9a227', 'DORADO': '#c9a227', 'PLATA': '#c0c4cc', 'PLATEADO': '#c0c4cc',
 };
