@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { countCombos } from '../../lib/variantModel';
-import { swatchBg } from '../../lib/colors';
+import { swatchBg, colorHex } from '../../lib/colors';
+import { optionValuesApi } from '../../api/pim';
 import { inputCls } from './EditorLayout';
 
 const chip = 'inline-flex items-center gap-1.5 text-sm font-medium bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 rounded-lg pl-3 pr-1.5 py-1';
@@ -73,6 +75,29 @@ export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption,
   const addColorFromValue = (v) => { if (!usedColorIds.has(v._id)) set({ colors: [...sc.colors, { label: v.valor, hex: v.meta?.hex, valueId: v._id, override: false, sizes: [] }] }); };
   const addColorLabel = (label, hex) => { const l = label.trim(); if (l && !usedColorLabels.has(l.toLowerCase())) set({ colors: [...sc.colors, { label: l, hex, override: false, sizes: [] }] }); };
   const updateColor = (i, patch) => set({ colors: sc.colors.map((c, idx) => (idx === i ? { ...c, ...patch } : c)) });
+  // Tono del color: el hex vive en el OptionValue, compartido por TODOS los
+  // productos, así que se guarda directo en la API (no con el producto). El
+  // selector nativo dispara un evento por cada movimiento: se espera a que el
+  // usuario pare 600 ms antes de guardar. Un color recién creado (sin valueId)
+  // solo guarda el hex local; variantModel lo usa al crear el valor.
+  const qc = useQueryClient();
+  const hexTimers = useRef({});
+  const [hexError, setHexError] = useState(null);
+  const changeHex = (i, hex) => {
+    const c = sc.colors[i];
+    updateColor(i, { hex });
+    if (!c.valueId) return;
+    clearTimeout(hexTimers.current[c.valueId]);
+    hexTimers.current[c.valueId] = setTimeout(async () => {
+      try {
+        setHexError(null);
+        await optionValuesApi.update(c.valueId, { meta: { hex } });
+        qc.invalidateQueries({ queryKey: ['option-values-all'] });
+      } catch (e) {
+        setHexError(`No se pudo guardar el tono de ${c.label}: ${e.message}`);
+      }
+    }, 600);
+  };
   const removeColor = (i) => {
     if (confirmarQuitarColor && !confirmarQuitarColor(sc.colors[i])) return;
     set({ colors: sc.colors.filter((_, idx) => idx !== i) });
@@ -113,13 +138,20 @@ export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption,
         </div>
 
         {/* Colores elegidos: arriba, compactos */}
-        {sc.colors.length > 0 && <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Elegidos</p>}
+        {sc.colors.length > 0 && <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Elegidos <span className="normal-case font-normal tracking-normal text-gray-400">· clic en el círculo para ajustar el tono</span></p>}
+        {hexError && <p className="mb-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{hexError}</p>}
         {/* Tarjetas de color */}
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           {sc.colors.map((c, i) => (
             <div key={c.valueId || c.label} className={`rounded-lg border border-gray-200 bg-white p-3 ${c.override ? 'md:col-span-2' : ''}`}>
               <div className="flex items-center gap-3">
-                <span className="h-7 w-7 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: swatchBg(c.label, c.hex) }} />
+                <label title="Cambiar tono (se aplica en todos los productos con este color)"
+                  className="relative h-7 w-7 shrink-0 cursor-pointer rounded-full ring-1 ring-black/10 hover:ring-2 hover:ring-indigo-400"
+                  style={{ background: swatchBg(c.label, c.hex) }}>
+                  <input type="color" className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    value={/^#[0-9a-f]{6}$/i.test(c.hex || '') ? c.hex.toLowerCase() : colorHex(c.label)}
+                    onChange={(e) => changeHex(i, e.target.value)} />
+                </label>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-gray-900">{c.label}</p>
                   <label className="flex cursor-pointer items-center gap-1.5 text-xs text-gray-500">
