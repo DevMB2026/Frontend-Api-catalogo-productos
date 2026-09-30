@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { updateProduct } from '../../api/catalog';
+import { valoresComunes } from '../../lib/variantModel';
 
 const idOf = (x) => (x && x._id) ? x._id : x;
 const inputCls = 'w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
@@ -17,17 +18,19 @@ export default function VariantesManager({ productId, product, onChanged }) {
   const [saved, setSaved] = useState(false);
 
   // Si el producto se recarga (tras guardar u otra edición), precarga los
-  // valores actuales (si todas las variantes ya comparten uno).
+  // valores actuales: el que más se repite, ignorando variantes vacías. Antes
+  // bastaba UNA variante sin composición (ej. una talla agregada después)
+  // para que el campo saliera vacío y pareciera que no se había guardado.
   useEffect(() => {
     setSaved(false);
-    const composiciones = new Set(variants.map((v) => v.composicion || ''));
-    setComposicion(composiciones.size === 1 ? [...composiciones][0] : '');
-    const stocks = new Set(variants.map((v) => v.stock || 0));
-    setStockValue(stocks.size === 1 ? [...stocks][0] : 0);
+    const comunes = valoresComunes(variants);
+    setComposicion(comunes.composicion);
+    setStockValue(comunes.stock);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product]);
 
   const dirty = variants.some((v) => (v.composicion || '') !== composicion || (v.stock || 0) !== Number(stock));
+  const sinComposicion = composicion ? variants.filter((v) => (v.composicion || '') !== composicion).length : 0;
 
   const save = async () => {
     setBusy(true); setError(null);
@@ -77,6 +80,11 @@ export default function VariantesManager({ productId, product, onChanged }) {
           {busy ? 'Guardando…' : 'Guardar stock y composición'}
         </button>
         {saved && !dirty && <span className="text-xs text-green-600">Guardado ✓</span>}
+        {!busy && sinComposicion > 0 && (
+          <span className="text-xs text-amber-700">
+            {sinComposicion} de {variants.length} variantes tienen otra composición o ninguna (ej. tallas agregadas después). Guarda para aplicarla a todas.
+          </span>
+        )}
       </div>
     </div>
   );

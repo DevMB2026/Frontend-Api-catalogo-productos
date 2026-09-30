@@ -14,7 +14,7 @@ export function scFromProduct(product, colorOptionId) {
   const oid = (x) => (x && x._id) ? x._id : x;
   const colorOpt = opts.find((o) => oid(o.option) === colorOptionId);
   const sizeOpt = opts.find((o) => oid(o.option) !== colorOptionId);
-  const sizeOptionId = sizeOpt ? oid(sizeOpt.option) : '';
+  const sizeOptionId = sizeOpt ? oid(sizeOpt.option) : ''; 
   const baseSizes = (sizeOpt?.values || []).map((v) => ({ label: v.valor || '', valueId: oid(v) }));
 
   const variants = product.variants || [];
@@ -69,6 +69,11 @@ export async function scToPayload(sc, baseSku, colorOptionId, createValue, exist
 
   // Mapa de variantes existentes por combinación, para preservar datos.
   const byKey = new Map((existingVariants || []).map((v) => [comboKey((v.optionValues || []).map(oid)), v]));
+  // Stock y composición son un solo valor para todo el producto (ver
+  // VariantesManager): una talla o color NUEVO los hereda de las variantes
+  // que ya existen — antes nacía vacía y la 4XG/5XG agregada después se
+  // quedaba sin composición.
+  const heredado = valoresComunes(existingVariants);
 
   const variants = [];
   for (const c of colors) {
@@ -85,13 +90,30 @@ export async function scToPayload(sc, baseSku, colorOptionId, createValue, exist
         sku: prev?.sku || `${baseSku}-${slugify(c.label)}${s ? '-' + slugify(s.label) : ''}`.toUpperCase(),
         // SKUs del ERP (se cargan por script): sin esto, guardar el producto los borraría.
         skusErp: prev?.skusErp?.length ? prev.skusErp.map(({ sku, sexo }) => ({ sku, sexo })) : undefined,
-        stock: prev?.stock || 0,
-        composicion: prev?.composicion || undefined
+        stock: prev ? (prev.stock || 0) : heredado.stock,
+        composicion: (prev ? prev.composicion : heredado.composicion) || undefined
       });
     }
   }
 
   return { options, variants };
+}
+
+// El stock y la composición "del producto": los que más se repiten entre las
+// variantes, ignorando las vacías (una variante recién agregada sin
+// composición no debe borrar la que ya tienen las demás).
+export function valoresComunes(variants = []) {
+  const masRepetido = (vals) => {
+    const cuenta = new Map();
+    for (const v of vals) cuenta.set(v, (cuenta.get(v) || 0) + 1);
+    let mejor, max = 0;
+    for (const [v, n] of cuenta) if (n > max) { mejor = v; max = n; }
+    return mejor;
+  };
+  return {
+    composicion: masRepetido(variants.map((v) => v.composicion).filter(Boolean)) || '',
+    stock: masRepetido(variants.map((v) => v.stock || 0).filter((n) => n > 0)) || 0,
+  };
 }
 
 // Nº de combinaciones (para el contador "≈ N").
