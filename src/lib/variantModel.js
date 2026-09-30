@@ -69,11 +69,6 @@ export async function scToPayload(sc, baseSku, colorOptionId, createValue, exist
 
   // Mapa de variantes existentes por combinación, para preservar datos.
   const byKey = new Map((existingVariants || []).map((v) => [comboKey((v.optionValues || []).map(oid)), v]));
-  // Stock y composición son un solo valor para todo el producto (ver
-  // VariantesManager): una talla o color NUEVO los hereda de las variantes
-  // que ya existen — antes nacía vacía y la 4XG/5XG agregada después se
-  // quedaba sin composición.
-  const heredado = valoresComunes(existingVariants);
 
   const variants = [];
   for (const c of colors) {
@@ -90,8 +85,12 @@ export async function scToPayload(sc, baseSku, colorOptionId, createValue, exist
         sku: prev?.sku || `${baseSku}-${slugify(c.label)}${s ? '-' + slugify(s.label) : ''}`.toUpperCase(),
         // SKUs del ERP (se cargan por script): sin esto, guardar el producto los borraría.
         skusErp: prev?.skusErp?.length ? prev.skusErp.map(({ sku, sexo }) => ({ sku, sexo })) : undefined,
-        stock: prev ? (prev.stock || 0) : heredado.stock,
-        composicion: (prev ? prev.composicion : heredado.composicion) || undefined
+        // Una combinación NUEVA (talla o color agregado) va sin stock ni
+        // composición: la API los hereda del mismo color o, si no, del
+        // producto (ver variantMerge.service.js en la API). Antes nacía con
+        // stock 0 y sin composición, y la 4XG/5XG agregada después se quedaba vacía.
+        stock: prev ? (prev.stock || 0) : undefined,
+        composicion: prev ? (prev.composicion || undefined) : undefined
       });
     }
   }

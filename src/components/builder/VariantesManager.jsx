@@ -13,6 +13,8 @@ export default function VariantesManager({ productId, product, onChanged }) {
   const variants = product.variants || [];
   const [stock, setStockValue] = useState(0);
   const [composicion, setComposicion] = useState('');
+  const [base, setBase] = useState(''); // composición común al cargar
+  const [reemplazarDistintas, setReemplazarDistintas] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
@@ -23,23 +25,34 @@ export default function VariantesManager({ productId, product, onChanged }) {
   // para que el campo saliera vacío y pareciera que no se había guardado.
   useEffect(() => {
     setSaved(false);
+    setReemplazarDistintas(false);
     const comunes = valoresComunes(variants);
+    setBase(comunes.composicion);
     setComposicion(comunes.composicion);
     setStockValue(comunes.stock);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product]);
 
-  const dirty = variants.some((v) => (v.composicion || '') !== composicion || (v.stock || 0) !== Number(stock));
-  const sinComposicion = composicion ? variants.filter((v) => (v.composicion || '') !== composicion).length : 0;
+  // El campo edita la composición COMÚN: se aplica a las variantes vacías y a
+  // las que tenían la común. Una variante con OTRA composición (ej. un color
+  // de otra tela) se conserva, salvo que se pida reemplazarla explícitamente.
+  const vacias = variants.filter((v) => !v.composicion);
+  const distintas = variants.filter((v) => v.composicion && v.composicion !== base);
+  const composicionFinal = (v) => ((!v.composicion || v.composicion === base || reemplazarDistintas) ? composicion : v.composicion);
+  const stockDistinto = variants.filter((v) => (v.stock || 0) !== Number(stock)).length;
+
+  const dirty = variants.some((v) => (v.composicion || '') !== (composicionFinal(v) || '') || (v.stock || 0) !== Number(stock));
 
   const save = async () => {
     setBusy(true); setError(null);
     try {
+      // Sin _id/media/activo que no hagan falta: la API conserva de cada
+      // variante lo que no se manda (ver variantMerge.service.js).
       const payload = variants.map((v) => ({
         sku: v.sku,
         skusErp: v.skusErp?.length ? v.skusErp.map(({ sku, sexo }) => ({ sku, sexo })) : undefined,
         optionValues: (v.optionValues || []).map(idOf),
-        composicion: composicion || undefined,
+        composicion: composicionFinal(v) || undefined,
         stock: Number(stock) || 0,
         activo: v.activo !== false
       }));
@@ -80,12 +93,32 @@ export default function VariantesManager({ productId, product, onChanged }) {
           {busy ? 'Guardando…' : 'Guardar stock y composición'}
         </button>
         {saved && !dirty && <span className="text-xs text-green-600">Guardado ✓</span>}
-        {!busy && sinComposicion > 0 && (
-          <span className="text-xs text-amber-700">
-            {sinComposicion} de {variants.length} variantes tienen otra composición o ninguna (ej. tallas agregadas después). Guarda para aplicarla a todas.
-          </span>
-        )}
       </div>
+
+      {vacias.length > 0 && composicion && (
+        <p className="text-xs text-amber-700">
+          {vacias.length} de {variants.length} variantes no tienen composición (ej. tallas o colores agregados después). Al guardar se les aplica esta.
+        </p>
+      )}
+      {distintas.length > 0 && (
+        <div className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p>
+            {distintas.length} variante{distintas.length === 1 ? '' : 's'} con otra composición
+            ({[...new Set(distintas.map((v) => v.composicion))].map((c) => `"${c}"`).join(', ')}).
+            {reemplazarDistintas ? ' Se reemplazarán por la de arriba.' : ' Se conservan al guardar.'}
+          </p>
+          <label className="mt-1 flex cursor-pointer items-center gap-1.5">
+            <input type="checkbox" className="accent-indigo-600" checked={reemplazarDistintas}
+              onChange={(e) => { setReemplazarDistintas(e.target.checked); setSaved(false); }} />
+            Reemplazarlas también
+          </label>
+        </div>
+      )}
+      {stockDistinto > 0 && stockDistinto < variants.length && (
+        <p className="text-xs text-gray-500">
+          {stockDistinto} de {variants.length} variantes tienen otro stock; al guardar todas quedan en {Number(stock) || 0}.
+        </p>
+      )}
     </div>
   );
 }

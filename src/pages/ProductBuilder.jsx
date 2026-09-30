@@ -83,11 +83,28 @@ export default function ProductBuilder() {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setAttr = (aid, v) => setAttributes((a) => ({ ...a, [aid]: v }));
 
-  // Crea un OptionValue nuevo al vuelo (talla/color tecleado) y devuelve su id.
+  // Id del OptionValue para una talla/color tecleado. Si ya existe en el
+  // catálogo (ej. "6XG" en Talla, aunque este producto aún no la use) se
+  // REUTILIZA: crearlo otra vez choca con el índice único (option + slug) y
+  // el guardado de tallas y colores fallaba con "Ya existe un registro".
+  const mismoValor = (a, b) => {
+    const n = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '');
+    return n(a) === n(b);
+  };
   const createValue = async (optionId, label, meta) => {
-    const r = await optionValuesApi.create({ option: optionId, valor: label, ...(meta ? { meta } : {}) });
-    await qc.invalidateQueries({ queryKey: ['option-values-all'] });
-    return r.data.data._id;
+    const conocido = (valuesByOption[optionId] || []).find((v) => mismoValor(v.valor, label));
+    if (conocido) return conocido._id;
+    try {
+      const r = await optionValuesApi.create({ option: optionId, valor: label, ...(meta ? { meta } : {}) });
+      await qc.invalidateQueries({ queryKey: ['option-values-all'] });
+      return r.data._id;
+    } catch (err) {
+      // Existe pero no estaba en la lista cargada (ej. desactivado): se busca.
+      const r = await optionValuesApi.list({ option: optionId, activo: 'all', limit: 500 });
+      const existente = (r.data || []).find((v) => mismoValor(v.valor, label));
+      if (existente) return existente._id;
+      throw err;
+    }
   };
 
   const { data: schemaData } = useQuery({ queryKey: ['attr-schema', form.category], queryFn: () => getAttributeSchema(form.category), enabled: !!form.category });
