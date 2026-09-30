@@ -51,6 +51,9 @@ export default function Login({ modo = 'admin' }) {
           <p className="text-sm text-gray-500 mt-1">{textos.subtitulo}</p>
         </div>
 
+        {!error && searchParams.get('expirada') && (
+          <div className="bg-amber-50 text-amber-800 text-sm rounded-md px-3 py-2">Tu sesión caducó. Vuelve a iniciar sesión.</div>
+        )}
         {error && (
           <div className="bg-red-50 text-red-700 text-sm rounded-md px-3 py-2">{error}</div>
         )}

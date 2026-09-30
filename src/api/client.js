@@ -24,6 +24,22 @@ export async function apiFetch(path, { method = 'GET', body, auth = false, isFor
   let data = null;
   try { data = await res.json(); } catch { /* respuesta sin cuerpo JSON */ }
 
+  // Sesión caducada o inválida en una petición autenticada: se cierra la
+  // sesión y se manda a iniciar sesión. Antes el panel se quedaba mostrando
+  // "Token inválido o expirado" (y la lista de productos vacía) sin salida.
+  const codigo = data && data.error && data.error.code;
+  if (auth && res.status === 401 && ['INVALID_TOKEN', 'NO_TOKEN', 'ACCOUNT_INACTIVE'].includes(codigo)) {
+    let role = null;
+    try { role = JSON.parse(localStorage.getItem('user') || 'null')?.role; } catch { /* user corrupto */ }
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    // Un cliente (role usuario) vuelve a /clientes y regresa a la misma página.
+    const destino = role === 'usuario'
+      ? `/clientes?expirada=1&next=${encodeURIComponent(window.location.pathname + window.location.search)}`
+      : '/login?expirada=1';
+    if (!/^\/(login|clientes)/.test(window.location.pathname)) window.location.assign(destino);
+  }
+
   if (!res.ok) {
     const error = new Error((data && data.message) || `Error ${res.status}`);
     error.status = res.status;

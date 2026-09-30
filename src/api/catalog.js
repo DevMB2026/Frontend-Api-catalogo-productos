@@ -8,14 +8,17 @@ export const listProducts = (params = {}) => {
 // Para la lista del panel: TODOS los productos (activos e inactivos), con sus
 // colores ocultos incluidos (conteos reales de variantes). La API da máximo
 // 100 por página, así que se piden las páginas necesarias.
+// TODOS los productos (activos e inactivos, con colores ocultos) para el
+// panel: recorre todas las páginas y descarta repetidos por _id, por si el
+// catálogo cambia mientras se pagina.
 export async function listAllProductsAdmin() {
-  const todos = [];
-  for (let page = 1; ; page += 1) {
+  const porId = new Map();
+  for (let page = 1; page <= 200; page += 1) {
     const r = await apiFetch(`/products?activo=all&incluirOcultos=true&limit=100&page=${page}&sort=-createdAt`, { auth: true }); // eslint-disable-line no-await-in-loop
-    todos.push(...(r.data || []));
-    if (!r.pagination || page >= r.pagination.totalPages) break;
+    for (const p of r.data || []) porId.set(p._id, p);
+    if (!r.pagination || page >= r.pagination.totalPages || !(r.data || []).length) break;
   }
-  return todos;
+  return [...porId.values()];
 }
 export const getProduct = (id) => apiFetch(`/products/${id}`);
 // Para el editor del panel: el producto COMPLETO, incluidos los colores ocultos
