@@ -43,6 +43,52 @@ function SizeChips({ sizes, onChange, placeholder, confirmarQuitar }) {
   );
 }
 
+// Normaliza "#AbC", "abc", "#a1b2c3" o "a1b2c3" a "#a1b2c3"; null si no es un hex.
+function normalizeHex(text) {
+  const t = String(text || '').trim().replace(/^#/, '');
+  if (/^[0-9a-f]{3}$/i.test(t)) return `#${t.split('').map((ch) => ch + ch).join('')}`.toLowerCase();
+  if (/^[0-9a-f]{6}$/i.test(t)) return `#${t}`.toLowerCase();
+  return null;
+}
+
+// Campo hex del color. Se edita en un borrador local para que teclear a medias
+// ("#1a") no guarde nada: aplica en cuanto hay 6 dígitos válidos, y con Enter
+// o al salir del campo acepta también la forma corta (#abc). Si al salir el
+// texto no es un hex, vuelve al valor actual.
+function HexInput({ hex, fallback, onApply }) {
+  const actual = normalizeHex(hex) || '';
+  const [draft, setDraft] = useState(actual);
+  const [editando, setEditando] = useState(false);
+  const shown = editando ? draft : actual;
+  const invalido = editando && draft.trim() !== '' && !normalizeHex(draft);
+
+  const commit = () => {
+    setEditando(false);
+    const h = normalizeHex(draft);
+    if (h && h !== actual) onApply(h);
+  };
+
+  return (
+    <input
+      value={shown}
+      placeholder={fallback}
+      aria-label="Código hexadecimal del color"
+      spellCheck={false}
+      maxLength={7}
+      onFocus={() => { setDraft(actual); setEditando(true); }}
+      onChange={(e) => {
+        const v = e.target.value;
+        setDraft(v);
+        const t = v.trim().replace(/^#/, '');
+        if (/^[0-9a-f]{6}$/i.test(t)) onApply(`#${t}`.toLowerCase());
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+      className={`w-24 shrink-0 rounded-md border px-2 py-1 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 ${invalido ? 'border-red-400 text-red-600' : 'border-gray-300 text-gray-700'}`}
+    />
+  );
+}
+
 export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption, valuesByOption, confirmarQuitarColor, confirmarQuitarTalla }) {
   const set = (patch) => onChange({ ...sc, ...patch });
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -138,7 +184,7 @@ export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption,
         </div>
 
         {/* Colores elegidos: arriba, compactos */}
-        {sc.colors.length > 0 && <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Elegidos <span className="normal-case font-normal tracking-normal text-gray-400">· clic en el círculo para ajustar el tono</span></p>}
+        {sc.colors.length > 0 && <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Elegidos <span className="normal-case font-normal tracking-normal text-gray-400">· clic en el círculo o escribe el hex para ajustar el tono</span></p>}
         {hexError && <p className="mb-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{hexError}</p>}
         {/* Tarjetas de color */}
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
@@ -159,6 +205,7 @@ export default function SizesAndColors({ sc, onChange, sizeOptions, colorOption,
                     {c.override ? `Tallas propias (${c.sizes.length})` : `Usa las ${sc.baseSizes.length} tallas`}
                   </label>
                 </div>
+                <HexInput hex={c.hex} fallback={colorHex(c.label)} onApply={(hex) => changeHex(i, hex)} />
                 <button type="button" onClick={() => removeColor(i)} aria-label={`Quitar ${c.label}`}
                   className="rounded-md px-2 py-1 text-sm text-gray-400 hover:bg-red-50 hover:text-red-600">Quitar</button>
               </div>
