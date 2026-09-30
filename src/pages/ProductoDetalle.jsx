@@ -239,10 +239,16 @@ export default function ProductoDetalle() {
                     const active = selected[idOf(o.option)] === idOf(val);
                     if (isColorAxis) {
                       // SIEMPRE ruedita (nunca botón de texto), aunque no tenga hex.
+                      // Colores marcados como nuevos (p.valoresNuevos) llevan "NEW".
+                      const nuevo = (p.valoresNuevos || []).some((x) => idOf(x) === idOf(val));
                       return (
-                        <button key={idOf(val)} onClick={() => chooseValue(idOf(o.option), idOf(val))} title={val.valor}
-                          className={`w-9 h-9 rounded-full transition shrink-0 ${active ? 'ring-2 ring-indigo-600 ring-offset-2' : 'ring-1 ring-gray-300 hover:ring-gray-500'}`}
-                          style={{ background: swatchBg(val.valor, val.meta?.hex) }} />
+                        <button key={idOf(val)} onClick={() => chooseValue(idOf(o.option), idOf(val))} title={nuevo ? `${val.valor} (nuevo)` : val.valor}
+                          className={`relative w-9 h-9 rounded-full transition shrink-0 ${active ? 'ring-2 ring-indigo-600 ring-offset-2' : 'ring-1 ring-gray-300 hover:ring-gray-500'}`}
+                          style={{ background: swatchBg(val.valor, val.meta?.hex) }}>
+                          {nuevo && (
+                            <span className="pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 rounded bg-red-600 px-1 text-[9px] font-bold leading-[14px] tracking-wide text-white shadow">NEW</span>
+                          )}
+                        </button>
                       );
                     }
                     return (

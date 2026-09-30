@@ -324,7 +324,7 @@ export default function ProductBuilder() {
     it.push({ id: 'sec-detalles', label: 'Atributos y detalles', status: null });
     it.push({ id: 'sec-tallas', label: 'Tallas y colores', status: !sc.colors.length || !nTallas ? 'warn' : 'ok', hint: !sc.colors.length ? 'Sin colores' : (!nTallas ? 'Sin tallas' : '') });
     if (isEdit && product) {
-      it.push({ id: 'sec-visibles', label: 'Colores visibles', status: null });
+      it.push({ id: 'sec-visibles', label: 'Colores visibles y nuevos', status: null });
       it.push({ id: 'sec-imagenes', label: 'Imágenes', status: nFotos ? 'ok' : 'warn', hint: nFotos ? '' : 'Sin fotos' });
       it.push({ id: 'sec-stock', label: 'Stock y composición', status: null });
       it.push({ id: 'sec-skus', label: 'SKUs', status: !variantes.length ? null : (sinSku ? 'warn' : 'ok'), hint: sinSku ? `${sinSku} variantes sin SKU` : '' });
@@ -488,7 +488,7 @@ export default function ProductBuilder() {
           </Section>
 
           {isEdit && product && (
-            <Section id="sec-visibles" n={num()} instant title="Colores visibles en el catálogo" desc="Clic en un color para ocultarlo o volver a mostrarlo. Oculto = no aparece en WordPress, distribuidores ni clientes, pero NO se borra (variantes, SKUs, precios y fotos se conservan).">
+            <Section id="sec-visibles" n={num()} instant title="Colores visibles y nuevos" desc="Clic en un color para ocultarlo o volver a mostrarlo. Oculto = no aparece en WordPress, distribuidores ni clientes, pero NO se borra (variantes, SKUs, precios y fotos se conservan). Abajo marcas qué colores llevan la etiqueta NEW.">
               <ColoresOcultos productId={id} product={product} colorOptionId={colorOptionId} onChanged={refetchProduct} />
             </Section>
           )}
