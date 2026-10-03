@@ -111,7 +111,8 @@ export default function MisPrecios({ productId, brandSlug, product, variantId })
   if (!isAuth || isLoading) return null;
 
   if (error) {
-    // Sin permisos de precio (p. ej. un admin navegando el catálogo): no se muestra nada.
+    // Sin permisos de precio (p. ej. un distribuidor navegando el catálogo): no se muestra nada.
+    // Los administradores ven todos los tipos (lo resuelve el backend).
     if (error.status !== 401) return null;
     return (
       <div className="mt-7 rounded-xl ring-1 ring-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
